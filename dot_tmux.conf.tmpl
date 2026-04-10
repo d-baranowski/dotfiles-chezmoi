@@ -111,6 +111,9 @@ bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
 
+bind s new-session
+bind w new-window -c "#{pane_current_path}"
+
 set -g pane-active-border-style 'fg=magenta,bg=default'
 set -g pane-border-style 'fg=brightblack,bg=default'
 
