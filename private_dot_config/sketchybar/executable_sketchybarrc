@@ -1,0 +1,282 @@
+#!/bin/bash
+
+# This is a demo config to showcase some of the most important commands.
+# It is meant to be changed and configured, as it is intentionally kept sparse.
+# For a (much) more advanced configuration example see my dotfiles:
+# https://github.com/FelixKratz/dotfiles
+
+PLUGIN_DIR="$CONFIG_DIR/plugins"
+
+# Load colors
+source "$CONFIG_DIR/colors.sh"
+
+##### Bar Appearance #####
+# Configuring the general appearance of the bar.
+# These are only some of the options available. For all options see:
+# https://felixkratz.github.io/SketchyBar/config/bar
+# If you are looking for other colors, see the color picker:
+# https://felixkratz.github.io/SketchyBar/config/tricks#color-picker
+
+sketchybar --bar position=top height=36 blur_radius=30 color=$BAR_COLOR
+
+##### Changing Defaults #####
+# We now change some default values, which are applied to all further items.
+# For a full list of all available item properties see:
+# https://felixkratz.github.io/SketchyBar/config/items
+
+default=(
+  padding_left=0
+  padding_right=0
+  icon.font="Hack Nerd Font:Regular:14.0"
+  label.font="SF Pro:Semibold:14.0"
+  icon.color=$DEFAULT_ICON_COLOR
+  label.color=$DEFAULT_LABEL_COLOR
+  icon.padding_left=10
+  icon.padding_right=10
+  label.padding_left=0
+  label.padding_right=10
+  background.padding_left=4
+  background.padding_right=4
+)
+sketchybar --default "${default[@]}"
+
+sketchybar --add event aerospace_workspace_change
+sketchybar --add event aerospace_mode_changed
+
+##### Workspace Pills #####
+# One pill per workspace: bold letter on the left, app-icon glyphs on the right.
+# The active workspace gets a translucent background; the whole group is wrapped
+# in a bordered bracket. App icons + active state are managed by aerospace.sh.
+
+WORKSPACES=(M B N S C D T Z I A)
+
+space_defaults=(
+  # Pill background (only drawn when focused — see aerospace.sh)
+  background.color=$TRANSPARENT
+  background.drawing=off
+  background.corner_radius=6
+  background.height=22
+  background.padding_left=2
+  background.padding_right=2
+
+  # Workspace letter
+  icon.font="SF Pro:Heavy:13.0"
+  icon.padding_left=10
+  icon.padding_right=4
+  icon.y_offset=0
+  icon.highlight_color=$SPACE_HIGHLIGHT_COLOR
+
+  # App-icon glyphs (label) — hidden by default, populated by aerospace.sh
+  label.drawing=off
+  label.font="sketchybar-app-font:Regular:12.0"
+  label.padding_left=4
+  label.padding_right=10
+  label.y_offset=-1
+
+  y_offset=0
+)
+
+for sid in "${WORKSPACES[@]}"; do
+  sketchybar --add item space.$sid left                           \
+             --subscribe space.$sid aerospace_workspace_change    \
+             --set space.$sid "${space_defaults[@]}"              \
+                              icon="$sid"                          \
+                              click_script="aerospace workspace $sid" \
+                              script="$CONFIG_DIR/plugins/aerospace.sh $sid"
+done
+
+# Wrap the whole row in a bordered bracket so the workspaces read as one group.
+sketchybar --add bracket spaces "${WORKSPACES[@]/#/space.}" \
+           --set spaces \
+                background.color=$TRANSPARENT          \
+                background.border_color=$ACCENT_TRANSPARENT \
+                background.border_width=1              \
+                background.corner_radius=8             \
+                background.height=28                   \
+                background.drawing=on
+
+##### Adding Left Items #####
+# We add some regular items to the left side of the bar, where
+# only the properties deviating from the current defaults need to be set
+
+sketchybar --add item chevron left \
+  --set chevron icon= label.drawing=off \
+  --add item layout_toggle left \
+  --set layout_toggle \
+  icon="" \
+  icon.font="Hack Nerd Font:Regular:14.0" \
+  icon.color=$DEFAULT_ICON_COLOR \
+  icon.padding_left=8 \
+  icon.padding_right=8 \
+  label.drawing=off \
+  background.drawing=on \
+  background.color=$FRONT_APP_LAYOUT_BG_COLOR \
+  background.corner_radius=4 \
+  background.height=16 \
+  background.padding_left=4 \
+  background.padding_right=4 \
+  click_script="aerospace layout tiles accordion" \
+  --add item front_app center \
+  --set front_app icon.drawing=off label.drawing=on script="$PLUGIN_DIR/front_app.sh" \
+  --subscribe front_app front_app_switched \
+  --add item front_app_layout left \
+  --set front_app_layout \
+  icon.drawing=on \
+  icon.font="Hack Nerd Font:Regular:11.0" \
+  icon.color=$FRONT_APP_LAYOUT_ICON_COLOR \
+  icon.padding_left=6 \
+  icon.padding_right=6 \
+  label.drawing=off \
+  background.drawing=on \
+  background.color=$FRONT_APP_LAYOUT_BG_COLOR \
+  background.corner_radius=4 \
+  background.height=16 \
+  background.padding_left=4 \
+  background.padding_right=0 \
+  script="$PLUGIN_DIR/front_app.sh" \
+  --subscribe front_app_layout front_app_switched aerospace_mode_changed \
+  --add graph cpu left 40 \
+  --set cpu \
+  display=1 \
+  update_freq=3 \
+  graph.color=$GREEN \
+  graph.fill_color=$GREEN \
+  graph.line_width=1.5 \
+  icon="" \
+  icon.color=$GREEN \
+  icon.font="Hack Nerd Font:Regular:13.0" \
+  icon.padding_left=4 \
+  icon.padding_right=4 \
+  label.font="SF Pro:Semibold:11.0" \
+  label.padding_left=2 \
+  label.padding_right=4 \
+  background.drawing=on \
+  background.color=$TRANSPARENT \
+  background.height=16 \
+  background.padding_left=-4 \
+  background.padding_right=4 \
+  y_offset=0 \
+  script="$PLUGIN_DIR/cpu.sh" \
+  --add graph gpu left 40 \
+  --set gpu \
+  display=1 \
+  update_freq=3 \
+  graph.color=$MAGENTA \
+  graph.fill_color=$MAGENTA \
+  graph.line_width=1.5 \
+  icon="󰢮" \
+  icon.font="Hack Nerd Font:Regular:13.0" \
+  icon.color=$MAGENTA \
+  icon.padding_left=4 \
+  icon.padding_right=4 \
+  label.font="SF Pro:Semibold:11.0" \
+  label.padding_left=2 \
+  label.padding_right=4 \
+  background.drawing=on \
+  background.color=$TRANSPARENT \
+  background.height=16 \
+  background.padding_left=-4 \
+  background.padding_right=4 \
+  y_offset=0 \
+  script="$PLUGIN_DIR/gpu.sh"
+
+##### Adding Right Items #####
+# In the same way as the left items we can add items to the right side.
+# Additional position (e.g. center) are available, see:
+# https://felixkratz.github.io/SketchyBar/config/items#adding-items-to-sketchybar
+
+# Some items refresh on a fixed cycle, e.g. the clock runs its script once
+# every 10s. Other items respond to events they subscribe to, e.g. the
+# volume.sh script is only executed once an actual change in system audio
+# volume is registered. More info about the event system can be found here:
+# https://felixkratz.github.io/SketchyBar/config/events
+
+sketchybar --add item clock right \
+  --set clock update_freq=10 icon= script="$PLUGIN_DIR/clock.sh" \
+  --add item docker right \
+  --set docker \
+  update_freq=10 \
+  icon="󰡨" \
+  icon.font="Hack Nerd Font:Regular:14.0" \
+  icon.color=$BLUE \
+  label.font="SF Pro:Semibold:12.0" \
+  label.padding_left=2 \
+  label.padding_right=8 \
+  script="$PLUGIN_DIR/docker.sh" \
+  --add item slack right \
+  --set slack \
+  update_freq=15 \
+  icon=":slack:" \
+  icon.font="sketchybar-app-font:Regular:16.0" \
+  icon.y_offset=-1 \
+  icon.padding_left=8 \
+  icon.padding_right=4 \
+  label.font="SF Pro:Bold:11.0" \
+  label.padding_right=8 \
+  click_script="open -a 'Slack' && aerospace workspace S" \
+  script="$PLUGIN_DIR/slack.sh" \
+  --add item volume right \
+  --set volume \
+  icon.font="Hack Nerd Font:Regular:14.0" \
+  icon.color=$VOLUME_COLOR \
+  label.color=$VOLUME_COLOR \
+  click_script="osascript -e 'set volume output muted not (output muted of (get volume settings))' && \"\$PLUGIN_DIR/volume.sh\"" \
+  script="$PLUGIN_DIR/volume.sh" \
+  --subscribe volume volume_change mouse.scrolled \
+  --add item battery right \
+  --set battery update_freq=120 icon.drawing=on icon.font="Hack Nerd Font:Regular:14.0" script="$PLUGIN_DIR/battery.sh" \
+  --subscribe battery system_woke power_source_change \
+  --add item calendar_event right \
+  --set calendar_event \
+  update_freq=60 \
+  script="$PLUGIN_DIR/calendar_event.sh" \
+  click_script="$PLUGIN_DIR/open_calendar.sh" \
+  icon.font="sketchybar-app-font:Regular:16.0" \
+  icon.color=$WHITE \
+  icon.y_offset=-1 \
+  label.color="$CAL_EVENT_LABEL_COLOR" \
+  background.drawing=on \
+  background.color="$CAL_EVENT_BG_COLOR" \
+  background.corner_radius=8 \
+  background.height=25
+
+##### App Launchers (right side, next to calendar) #####
+# Same pill styling as calendar_event. Glyphs from sketchybar-app-font.
+launcher_defaults=(
+  icon.font="sketchybar-app-font:Regular:16.0"
+  icon.color=$WHITE
+  icon.padding_left=8
+  icon.padding_right=8
+  icon.y_offset=-1
+  label.drawing=off
+  background.drawing=on
+  background.color="$CAL_EVENT_BG_COLOR"
+  background.corner_radius=8
+  background.height=25
+)
+
+# Added in right-to-left order so they sit just left of calendar_event:
+#   ... finder  alacritty  goland  code  calendar_event
+sketchybar --add item launcher.code right \
+  --set launcher.code "${launcher_defaults[@]}" \
+                      icon=":code:" \
+                      click_script="open -a 'Visual Studio Code'" \
+  --add item launcher.goland right \
+  --set launcher.goland "${launcher_defaults[@]}" \
+                        icon=":goland:" \
+                        click_script="open -a 'GoLand'" \
+  --add item launcher.alacritty right \
+  --set launcher.alacritty "${launcher_defaults[@]}" \
+                           icon=":alacritty:" \
+                           click_script="open -a 'Alacritty'" \
+  --add item launcher.finder right \
+  --set launcher.finder "${launcher_defaults[@]}" \
+                        icon=":finder:" \
+                        click_script="open -a 'Finder'" \
+  --add item launcher.spotlight right \
+  --set launcher.spotlight "${launcher_defaults[@]}" \
+                           icon=":spotlight:" \
+                           click_script="osascript -e 'tell application \"System Events\" to keystroke \" \" using command down'"
+
+##### Force all scripts to run the first time (never do this in a script) #####
+sketchybar --update

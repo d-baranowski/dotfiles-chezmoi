@@ -1,0 +1,56 @@
+general.import = [
+  "~/.config/alacritty/catppuccin-mocha.toml"
+]
+
+
+
+# Shell - use zsh login shell (loads oh-my-zsh via .zshrc)
+[terminal]
+shell = { program = "/bin/zsh", args = ["--login"] }
+
+# Window settings
+[window]
+padding = { x = 3, y = 8 }
+opacity = 1
+
+# Font
+[font]
+normal.family = "JetBrainsMono Nerd Font"
+size = 16.0
+
+# Scrollback
+[scrolling]
+history = 10000
+
+[keyboard]
+
+[[keyboard.bindings]]
+key = "C"
+mods = "Alt"
+action = "Copy"
+
+[[keyboard.bindings]]
+key = "V"
+mods = "Alt"
+action = "Paste"
+
+[[keyboard.bindings]]
+key = "Escape"
+mods = "Shift"
+action = "ToggleViMode"
+
+[[keyboard.bindings]]
+key = "+"
+mods = "Control|Shift"
+action = "IncreaseFontSize"
+
+[[keyboard.bindings]]
+key = "_"
+mods = "Control|Shift"
+action = "DecreaseFontSize"
+
+[[keyboard.bindings]]
+key = "0"
+mods = "Control|Shift"
+action = "ResetFontSize"
+

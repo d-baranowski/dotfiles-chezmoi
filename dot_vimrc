@@ -1,0 +1,101 @@
+" -----------------------------
+" General
+" -----------------------------
+set nocompatible
+set encoding=utf-8
+filetype plugin indent on
+"syntax enable
+
+" -----------------------------
+" UI
+" -----------------------------
+set number
+"set relativenumber
+"set cursorline
+set showcmd
+"set showmatch
+set wildmenu
+set termguicolors
+set background=dark
+
+" -----------------------------
+" Indentation
+" -----------------------------
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+set expandtab
+set smartindent
+set autoindent
+
+" -----------------------------
+" Search
+" -----------------------------
+set ignorecase
+set smartcase
+set incsearch
+set hlsearch
+
+" Clear highlight with Esc
+nnoremap <Esc> :nohlsearch<CR>
+
+" -----------------------------
+" Behavior
+" -----------------------------
+set hidden
+set nowrap
+set backspace=indent,eol,start
+set updatetime=300
+set timeoutlen=500
+set clipboard=unnamedplus
+
+
+" -----------------------------
+" Splits
+" -----------------------------
+set splitbelow
+set splitright
+
+" -----------------------------
+" Undo & Swap
+" -----------------------------
+set undofile
+set undodir=~/.vim/undodir
+set noswapfile
+
+" -----------------------------
+" Statusline
+" -----------------------------
+set laststatus=2
+
+" -----------------------------
+" Better movement
+" -----------------------------
+nnoremap j gj
+nnoremap k gk
+
+" -----------------------------
+" Leader 
+" -----------------------------
+let mapleader=" "
+
+" -----------------------------
+" Quick save & quit
+" -----------------------------
+nnoremap <leader>w :w<CR>
+nnoremap <leader>q :q<CR>
+
+" -----------------------------
+"  Select a register with leader r 
+" -----------------------------
+nnoremap <leader>r "
+vnoremap <leader>r "
+
+nnoremap <leader>y "+y
+vnoremap <leader>y "+y
+
+nnoremap <leader>p "0p
+vnoremap <leader>p "0p
+
+nnoremap <leader>x "1p
+vnoremap <leader>x "1p

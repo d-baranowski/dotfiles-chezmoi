@@ -1,0 +1,9 @@
+# Secrets - never commit
+.chezmoidata.yaml
+
+# Chezmoi external state
+.chezmoiexternal.toml
+
+# Plugins - installed by TPM (prefix+I) and oh-my-zsh
+dot_tmux/plugins/
+dot_oh-my-zsh/custom/plugins/

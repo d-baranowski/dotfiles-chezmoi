@@ -1,0 +1,55 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "mcpproxy": {
+      "type": "remote",
+      "url": "http://127.0.0.1:18420/mcp/",
+      "enabled": true
+    }
+  },
+  "model": "github-copilot/claude-opus-4.6",
+  "provider": {
+    "ollama": {
+      "models": {
+        "qwen3:30b": {
+          "_launch": true,
+          "name": "qwen3:30b"
+        },
+        "gemma4:e4b": {
+          "_launch": true,
+          "name": "gemma4:e4b"
+        },
+        "gemma4:26b": {
+          "_launch": true,
+          "name": "gemma4:26b"
+        },
+        "gemma4:31b": {
+          "_launch": true,
+          "name": "gemma4:31b"
+        },
+        "devstral:24b": {
+          "_launch": true,
+          "name": "devstral:24b"
+        },
+        "gpt-oss:20b": {
+          "_launch": true,
+          "name": "gpt-oss:20b"
+        },
+        "qwen3-coder:30b-a3b-q8_0": {
+          "_launch": true,
+          "name": "qwen3-coder:30b-a3b-q8_0"
+        }
+      },
+      "name": "Ollama",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      }
+    },
+    "openrouter": {
+      "models": {
+        "openrouter/auto": {}
+      }
+    }
+  }
+}

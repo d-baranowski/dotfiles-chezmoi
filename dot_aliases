@@ -1,0 +1,210 @@
+alias ga="git add -p"
+alias gs="git status"
+alias g="git"
+alias br="git branch"
+alias changed-files="git diff --name-only"
+alias cf="git diff --name-only"
+alias gco="git checkout "
+alias gcob="git checkout -b"
+alias gc="git commit -m "
+alias gcm="git commit -m "
+alias gpl="git pull"
+alias gps="git push "
+alias gl="git log"
+alias gs="git status"
+alias gb="git branch"
+alias ga="git add -p"
+alias cleanbranches="git branch | grep -v master | grep -v main | xargs git branch -D" 
+alias master="git checkout master && git pull && git stash"
+alias main="git checkout main && git pull && git stash"
+alias status="git status "
+alias pull="git pull "
+alias push="git push "
+alias diff="code -d "
+
+alias bstack='f() { git reflog | grep checkout | cut -d " " -f 8 | uniq | head ${1} | cat -n };f'
+gitignore() {
+	echo "\n" >> .gitignore
+	echo $1 >> .gitignore
+}
+
+alias search="ack"
+alias dbpod="kubectl get pods -n external | awk '{print $1}' | sed -n '1d;p'"
+alias dcu="docker compose up"
+alias dcud="docker compose up -d"
+alias dcd="docker compose down --volumes --remove-orphans"
+
+alias tf="terraform"
+
+awslocal() {
+  aws --endpoint-url=http://localhost:4566 "$@"
+}
+
+
+# Go forward in Git commit hierarchy, towards particular commit 
+# Usage:
+#  gofwd v1.2.7
+# Does nothing when the parameter is not specified.
+gofwd() {
+  git checkout $(git rev-list --topo-order HEAD.."$*" | tail -1)
+}
+
+# Go back in Git commit hierarchy
+# Usage: 
+#  goback
+alias gobck='git checkout HEAD~'
+
+alias docker-slay='docker kill $(docker ps -q)'
+alias docker-clean='docker rm $(docker ps -a -q) && docker rmi $(docker images -q)'
+alias docker-bash="docker run -it --entrypoint bin/bash "
+# docker run -it -p 127.0.0.1:8443:8443 --entrypoint 'bash' kurento-sample
+# docker commit lets you save running containers into images :D
+
+# Kubernetes
+alias kg='kubectl get'
+alias ka='kubectl apply'
+alias kc='kubectl'
+
+bucket-size() {
+  aws s3 ls --summarize --human-readable --recursive s3://$1
+}
+
+up () {
+  local d=""
+  limit=$1
+  for ((i=1 ; i <= limit ; i++))
+    do
+      d=$d/..
+    done
+  d=$(echo $d | sed 's/^\///')
+  if [ -z "$d" ]; then
+    d=..
+  fi
+  cd $d
+}
+
+kc-logs() {
+   kail -n $1 | $HOME/Workspace/sbftp/sbftp-aws/scripts/filter-logs.sh " " | sed -r '/^\s*$/d' | jq -r '.'
+}
+
+unpack () {
+   if [ -f $1 ] ; then
+       case $1 in
+           *.tar.bz2)   tar xvjf $1    ;;
+           *.tar.gz)    tar xvzf $1    ;;
+           *.bz2)       bunzip2 $1     ;;
+           *.rar)       unrar x $1       ;;
+           *.gz)        gunzip $1      ;;
+           *.tar)       tar xvf $1     ;;
+           *.tbz2)      tar xvjf $1    ;;
+           *.tgz)       tar xvzf $1    ;;
+           *.zip)       unzip $1       ;;
+           *.Z)         uncompress $1  ;;
+           *.7z)        7z x $1        ;;
+           *)           echo "don't know how to extract '$1'..." ;;
+       esac
+   else
+       echo "'$1' is not a valid file!"
+   fi
+}
+
+function unzipAll {
+  for zip in *.zip 
+  do
+    dirname=`echo $zip | sed 's/\.zip$//'`
+    if mkdir "$dirname"
+    then
+      if cd "$dirname"
+      then
+        unzip ../"$zip"
+        cd ..
+        # rm -f $zip # Uncomment to delete the original zip file
+      else
+        echo "Could not unpack $zip - cd failed"
+      fi
+    else
+      echo "Could not unpack $zip - mkdir failed"
+    fi
+  done
+}
+
+function kcSecret {
+  kubectl get secrets/$1 --template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
+}
+
+function kcCert {
+  kc get secret $1 -o yaml | yq '.data["tls.crt"]' | sed 's/"//g'  | base64 -d | openssl x509 -text -noout
+}
+
+function kcKillPods {
+  for i in $(kc get pods | grep $1 | awk '{print $1}'); do echo $i; kubectl delete pod $i; done;
+}
+
+function kcReset {
+   kubectl set env --all deployment --env="LAST_MANUAL_RESTART=$(date +%s)" -n $1
+
+}
+
+function kcg {
+  kubectl get $1 --all-namespaces | rg -i $2 
+}
+
+function ssmCert {
+  ssm $1 | jq '.Parameters[0].Value' | sed 's/"//g' | sed 's/\\n/\
+/g' | openssl x509 -text -noout
+}
+
+function vlt {
+     list=$(vault list secret/$1 2<&1)
+
+     if [ $? -ne 0 ]; then
+
+         if [ -n "$2" ]; then
+             vault read -field=$2 secret/$1
+         else
+             vault read secret/$1
+         fi
+     else
+         echo "$list"
+     fi
+}
+
+# Helper function to search for params in ssm
+function ssm {
+     # Find parameters by filter provided as argument then use jq to extract all names from the Parameters array then pass the names to sed to strip the quotes around them 
+     list=$(aws ssm describe-parameters --filters Key=Name,Values=$1 | jq ".Parameters[].Name" | xargs -I NAME echo NAME | sed -e 's/^"//' -e 's/"$//' 2<&1)
+     # If number of lines in list is not one echo it     
+     if [ $(echo $list | wc -l) -ne 1 ]; then
+        echo "$list"
+     else
+        # If there is only one element in the list get that param 
+        echo $list | xargs -I NAME aws ssm get-parameters --name NAME --with-decryption # --query "Parameters[0].Value" --output=text
+     fi
+}
+
+function copy-secret {
+	if [ -z "$1" ] || [ -z "$2"] || [ -z "$3" ]
+	then
+		echo "copy-secret SECRET_NAME FROM_NAMESPACE TO_NAMESPACE"
+	else
+		kubectl get secret $1 --namespace=$2 --export -o yaml | kubectl apply --namespace=$3 -f -
+	fi
+}
+
+function splitchain() {
+  gcsplit -f cert- "$1" '/-----BEGIN CERTIFICATE-----/' '{*}'
+}
+
+function free-port {
+  for port in "$(lsof -t -i :$1)"; do (kill $port);done
+}
+
+hist () {
+    history | grep --color ${1}
+}
+
+jsonArraySplit () {
+  for f in `cat $1 | jq -r 'keys[]'` ; do
+    cat $1 | jq ".[$f]" > $2-$f.json
+  done
+}

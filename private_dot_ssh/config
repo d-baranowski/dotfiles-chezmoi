@@ -1,0 +1,17 @@
+Host 192.168.1.37
+  HostName 192.168.1.37
+  User dan
+
+Host m
+  HostName may-chang.folk-saiph.ts.net
+  User dan
+
+Host x
+  HostName xiao-mei.folk-saiph.ts.net
+  User dan
+
+Host u
+  HostName ubuntu-pc.folk-saiph.ts.net
+  User daniel
+
+

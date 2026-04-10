@@ -1,0 +1,30 @@
+[user]
+	email = daniel.m.baranowski@gmail.com
+	name = Daniel Baranowski
+
+[init]
+        defaultBranch = main
+
+[core]
+        editor = vim
+
+[alias]
+        df = diff --name-only
+        s = status -sb
+        lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<<%an>>%Creset' --abbrev-commit --date=relative
+        cm = commit -m
+        undo = reset HEAD~1 --mixed
+        amend = commit --amend --no-edit
+        staged = diff --cached
+        ri = rebase -i
+        rim = rebase -i origin/master
+        pc = !git push origin "$(git symbolic-ref --short HEAD)"
+        aliases = !git config --get-regexp ^alias\\. | sed -e s/^alias\\.// -e s/\\ /\\ =\\ /
+        co = checkout
+        br = branch
+        last = log -1 HEAD
+        del = branch -D
+        # List branches
+        brl = branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate
+        pbr = push -u origin HEAD
+	

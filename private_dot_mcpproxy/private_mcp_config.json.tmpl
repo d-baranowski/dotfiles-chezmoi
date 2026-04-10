@@ -1,0 +1,331 @@
+{
+  "listen": "127.0.0.1:18420",
+  "enable_socket": true,
+  "data_dir": "{{ .chezmoi.homeDir }}/.mcpproxy",
+  "enable_tray": true,
+  "debug_search": false,
+  "mcpServers": [
+    {
+      "name": "chrome-devtools",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@0.21.0"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "github",
+      "protocol": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${keyring:github_pat}"
+      },
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "next-devtools",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "next-devtools-mcp@0.3.10"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "postgres",
+      "protocol": "stdio",
+      "command": "go-mcp-postgres",
+      "args": [
+        "--dsn",
+        "postgresql://postgres:{{ .postgres_password }}@localhost:5432/rpg"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "tmux",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "tmux-mcp@0.2.2",
+        "--shell-type=zsh"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "obsidian",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "@bitbonsai/mcpvault@0.11.0",
+        "{{ .chezmoi.homeDir }}/Documents/obsidian/work-notes/work-notes"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "trello",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@delorenj/mcp-server-trello@1.7.1"
+      ],
+      "env": {
+        "TRELLO_API_KEY": "${keyring:trello_api_key}",
+        "TRELLO_TOKEN": "${keyring:trello_token}"
+      },
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    }
+  ],
+  "top_k": 5,
+  "tools_limit": 15,
+  "tool_response_limit": 20000,
+  "call_tool_timeout": "2m0s",
+  "environment": {
+    "inherit_system_safe": true,
+    "allowed_system_vars": [
+      "PATH",
+      "HOME",
+      "TMPDIR",
+      "TEMP",
+      "TMP",
+      "SHELL",
+      "TERM",
+      "LANG",
+      "USER",
+      "USERNAME",
+      "XDG_CONFIG_HOME",
+      "XDG_DATA_HOME",
+      "XDG_CACHE_HOME",
+      "XDG_RUNTIME_DIR",
+      "LC_ALL",
+      "LC_CTYPE",
+      "LC_NUMERIC",
+      "LC_TIME",
+      "LC_COLLATE",
+      "LC_MONETARY",
+      "LC_MESSAGES",
+      "LC_PAPER",
+      "LC_NAME",
+      "LC_ADDRESS",
+      "LC_TELEPHONE",
+      "LC_MEASUREMENT",
+      "LC_IDENTIFICATION"
+    ],
+    "custom_vars": {
+      "PATH": "{{ .chezmoi.homeDir }}/.asdf/shims:{{ .chezmoi.homeDir }}/go/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    },
+    "enhance_path": true
+  },
+  "logging": {
+    "level": "info",
+    "enable_file": true,
+    "enable_console": true,
+    "filename": "main.log",
+    "max_size": 10,
+    "max_backups": 5,
+    "max_age": 30,
+    "compress": true,
+    "json_format": false
+  },
+  "api_key": "{{ .mcpproxy_api_key }}",
+  "require_mcp_auth": false,
+  "read_only_mode": false,
+  "disable_management": false,
+  "allow_server_add": true,
+  "allow_server_remove": true,
+  "enable_prompts": true,
+  "check_server_repo": true,
+  "docker_isolation": {
+    "enabled": false,
+    "default_images": {
+      "bash": "alpine:3.18",
+      "binary": "alpine:3.18",
+      "cargo": "rust:1.75-slim",
+      "composer": "php:8.2-cli-alpine",
+      "gem": "ruby:3.2-alpine",
+      "go": "golang:1.21-alpine",
+      "node": "node:20",
+      "npm": "node:20",
+      "npx": "node:20",
+      "php": "php:8.2-cli-alpine",
+      "pip": "python:3.11",
+      "pipx": "python:3.11",
+      "python": "python:3.11",
+      "python3": "python:3.11",
+      "ruby": "ruby:3.2-alpine",
+      "rustc": "rust:1.75-slim",
+      "sh": "alpine:3.18",
+      "uvx": "python:3.11",
+      "yarn": "node:20"
+    },
+    "registry": "docker.io",
+    "network_mode": "bridge",
+    "memory_limit": "512m",
+    "cpu_limit": "1.0",
+    "timeout": "30s",
+    "log_max_size": "100m",
+    "log_max_files": "3"
+  },
+  "registries": [
+    {
+      "id": "pulse",
+      "name": "Pulse MCP",
+      "description": "Browse and discover MCP use-cases, servers, clients, and news",
+      "url": "https://www.pulsemcp.com/",
+      "servers_url": "https://api.pulsemcp.com/v0beta/servers",
+      "tags": [
+        "verified"
+      ],
+      "protocol": "custom/pulse"
+    },
+    {
+      "id": "docker-mcp-catalog",
+      "name": "Docker MCP Catalog",
+      "description": "A collection of secure, high-quality MCP servers as docker images",
+      "url": "https://hub.docker.com/catalogs/mcp",
+      "servers_url": "https://hub.docker.com/v2/repositories/mcp/",
+      "tags": [
+        "verified"
+      ],
+      "protocol": "custom/docker"
+    },
+    {
+      "id": "fleur",
+      "name": "Fleur",
+      "description": "Fleur is the app store for Claude",
+      "url": "https://www.fleurmcp.com/",
+      "servers_url": "https://raw.githubusercontent.com/fleuristes/app-registry/refs/heads/main/apps.json",
+      "tags": [
+        "verified"
+      ],
+      "protocol": "custom/fleur"
+    },
+    {
+      "id": "azure-mcp-demo",
+      "name": "Azure MCP Registry Demo",
+      "description": "A reference implementation of MCP registry using Azure API Center",
+      "url": "https://demo.registry.azure-mcp.net/",
+      "servers_url": "https://demo.registry.azure-mcp.net/v0/servers",
+      "tags": [
+        "verified",
+        "demo",
+        "azure",
+        "reference"
+      ],
+      "protocol": "mcp/v0"
+    },
+    {
+      "id": "remote-mcp-servers",
+      "name": "Remote MCP Servers",
+      "description": "Community-maintained list of remote Model Context Protocol servers",
+      "url": "https://remote-mcp-servers.com/",
+      "servers_url": "https://remote-mcp-servers.com/api/servers",
+      "tags": [
+        "verified",
+        "community",
+        "remote"
+      ],
+      "protocol": "custom/remote"
+    }
+  ],
+  "features": {
+    "enable_runtime": true,
+    "enable_event_bus": true,
+    "enable_sse": true,
+    "enable_observability": true,
+    "enable_health_checks": true,
+    "enable_metrics": true,
+    "enable_tracing": false,
+    "enable_oauth": true,
+    "enable_quarantine": true,
+    "enable_docker_isolation": false,
+    "enable_search": true,
+    "enable_caching": true,
+    "enable_async_storage": true,
+    "enable_web_ui": true,
+    "enable_tray": true,
+    "enable_debug_logging": false,
+    "enable_contract_tests": false
+  },
+  "tls": {
+    "enabled": false,
+    "require_client_cert": false,
+    "hsts": true
+  },
+  "tokenizer": {
+    "enabled": true,
+    "default_model": "gpt-4",
+    "encoding": "cl100k_base"
+  },
+  "enable_code_execution": false,
+  "code_execution_timeout_ms": 120000,
+  "code_execution_pool_size": 10,
+  "activity_retention_days": 90,
+  "activity_max_records": 100000,
+  "activity_max_response_size": 65536,
+  "activity_cleanup_interval_min": 60,
+  "intent_declaration": {
+    "strict_server_validation": true
+  },
+  "sensitive_data_detection": {
+    "enabled": true,
+    "scan_requests": true,
+    "scan_responses": true,
+    "max_payload_size_kb": 1024,
+    "entropy_threshold": 4.5,
+    "categories": {
+      "api_token": true,
+      "auth_token": true,
+      "cloud_credentials": true,
+      "credit_card": true,
+      "database_credential": true,
+      "high_entropy": true,
+      "private_key": true,
+      "sensitive_file": true
+    }
+  },
+  "telemetry": {
+    "anonymous_id": "73f8e7c8-37c7-4b6f-811c-93796ffa8270"
+  },
+  "routing_mode": "retrieve_tools"
+}
