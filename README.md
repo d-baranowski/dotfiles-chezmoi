@@ -135,19 +135,22 @@ chezmoi init https://github.com/d-baranowski/dotfiles-chezmoi.git
 cp $(chezmoi source-path)/.chezmoidata.yaml.example $(chezmoi source-path)/.chezmoidata.yaml
 # Edit .chezmoidata.yaml and fill in your secrets
 
-# 4. Preview changes
+# 4. Set up git hooks (auto-applies chezmoi on every commit)
+git config core.hooksPath .githooks
+
+# 5. Preview changes
 chezmoi diff
 
-# 5. Apply
+# 6. Apply
 chezmoi apply -v
 
-# 6. Install tmux plugins
+# 7. Install tmux plugins
 # Open tmux, then press prefix + I
 
-# 7. Install oh-my-zsh plugins
+# 8. Install oh-my-zsh plugins
 # Handled automatically by .zshrc on next shell start
 
-# 8. Set up mcpproxy secrets in OS keyring
+# 9. Set up mcpproxy secrets in OS keyring
 mcpproxy secrets set github_pat
 mcpproxy secrets set trello_api_key
 mcpproxy secrets set trello_token
