@@ -1,0 +1,5 @@
+#!/bin/bash
+# Auto-apply chezmoi after every commit
+echo "Applying chezmoi changes..."
+chezmoi apply -v
+echo "Done."
