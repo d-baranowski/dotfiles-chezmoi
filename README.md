@@ -2,6 +2,56 @@
 
 My dotfiles, managed with [chezmoi](https://www.chezmoi.io/).
 
+## Prerequisites
+
+### Nerd Font (required for tmux catppuccin theme + sketchybar icons)
+
+The tmux status bar and sketchybar use icons from [Nerd Fonts](https://www.nerdfonts.com/). Without one, you'll see broken squares instead of icons.
+
+**macOS:**
+```bash
+brew install --cask font-jetbrains-mono-nerd-font
+```
+Then set your terminal emulator (Alacritty, iTerm2, etc.) to use "JetBrainsMono Nerd Font".
+
+**NixOS:** handled by the `tmux.nix` module (installs the font automatically).
+
+### Tmux Plugin Manager (TPM)
+
+Tmux plugins are managed by [TPM](https://github.com/tmux-plugins/tpm). Install it before applying:
+
+```bash
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+```
+
+After applying chezmoi, open tmux and press `prefix + I` (capital I) to install all plugins.
+
+### Oh-My-Zsh
+
+Zsh config depends on [Oh My Zsh](https://ohmyz.sh/):
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+Plugins used (installed automatically by oh-my-zsh): `git`, `web-search`, `copypath`
+
+Custom plugins need manual install:
+```bash
+# zsh-vi-mode
+git clone https://github.com/jeffreytse/zsh-vi-mode ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-vi-mode
+```
+
+### Other dependencies
+
+| Tool | macOS | NixOS | Used by |
+|------|-------|-------|---------|
+| fzf | `brew install fzf` | in `base.nix` | tmux-fzf, tmux-fzf-url, tmux-sessionx |
+| zoxide | `brew install zoxide` | add to modules | tmux-sessionx zoxide mode |
+| xclip | N/A (uses pbcopy) | in `tmux.nix` | clipboard in tmux on Linux |
+| jump | `brew install jump` | in `base.nix` | directory jumping in zsh |
+| asdf | `brew install asdf` | N/A | version manager for node, go, etc. |
+
 ## How it works
 
 Chezmoi keeps a **source copy** of your dotfiles in this repo. When you run `chezmoi apply`, it copies them to the right places in your home directory. You never edit your actual config files directly — you edit the source copy here, then apply.
@@ -102,6 +152,28 @@ mcpproxy secrets set github_pat
 mcpproxy secrets set trello_api_key
 mcpproxy secrets set trello_token
 ```
+
+## NixOS machines
+
+The tmux config is shared with NixOS servers via a dedicated Nix module in `nixos-workbenches/nixos-servers/modules/tmux.nix`. This is the **same config** as the chezmoi template but adapted for NixOS:
+
+- Clipboard uses `xclip` instead of `pbcopy`
+- Nerd Font installed declaratively via `fonts.packages`
+- Most plugins installed via `nixpkgs.tmuxPlugins`
+- TPM still needed for `sessionx` and `floax` (not in nixpkgs)
+
+After deploying with `nixos-rebuild switch`, SSH in and run:
+```bash
+# Install TPM (one-time)
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+
+# Open tmux, then prefix + I to install sessionx and floax
+tmux
+```
+
+If you change the tmux config, update **both**:
+1. `dotfiles-chezmoi/dot_tmux.conf.tmpl` — for macOS (chezmoi)
+2. `nixos-workbenches/nixos-servers/modules/tmux.nix` — for NixOS
 
 ## Secrets
 
