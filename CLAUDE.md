@@ -54,12 +54,10 @@ private_dot_config/        # ~/.config/
 
 private_dot_mcpproxy/                        # ~/.mcpproxy/
   private_mcp_config.json.tmpl               #   MCPProxy config (TEMPLATE - contains secret placeholders)
-  executable_loki-shipper.sh.tmpl            #   Log shipper script (TEMPLATE - paths are templated)
 
 private_Library/
   private_LaunchAgents/                      # ~/Library/LaunchAgents/
     com.mcpproxy.serve.plist.tmpl            #   MCPProxy service (TEMPLATE)
-    com.mcpproxy.loki-shipper.plist.tmpl     #   Loki log shipper service (TEMPLATE)
   private_Application Support/
     private_Code/User/                       # VS Code settings
       settings.json
