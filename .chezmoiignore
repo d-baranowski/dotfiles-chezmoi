@@ -1,3 +1,8 @@
 # Plugins - managed by TPM and oh-my-zsh, not chezmoi
 .tmux/plugins/
 .oh-my-zsh/custom/plugins/
+
+# Repo-meta docs — not dotfiles, should not be copied to $HOME
+AGENTS.md
+CLAUDE.md
+README.md
