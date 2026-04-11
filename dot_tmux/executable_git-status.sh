@@ -58,4 +58,4 @@ fi
 
 # Output as a catppuccin-style pill. tmux re-expands #{...} in #() output,
 # so the theme color vars resolve at render time.
-printf '#[fg=#{E:@thm_mauve},bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust},bg=#{E:@thm_mauve}] #[fg=#{E:@thm_fg},bg=#{E:@thm_surface_0}]%s #[fg=#{E:@thm_surface_0},bg=default]#{E:@catppuccin_status_right_separator} ' "$content"
+printf '#[fg=#{E:@thm_mauve},bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust},bg=#{E:@thm_mauve}]  #[fg=#{E:@thm_fg},bg=#{E:@thm_surface_0}]%s #[fg=#{E:@thm_surface_0},bg=default]#{E:@catppuccin_status_right_separator} ' "$content"
