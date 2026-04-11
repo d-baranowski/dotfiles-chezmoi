@@ -70,3 +70,53 @@ These are gitignored or chezmoiignored and should never be added:
 - Hardcode the home directory path — use `{{ .chezmoi.homeDir }}`
 - Add third-party plugin directories (tmux plugins, oh-my-zsh plugins)
 - Remove the `.tmpl` suffix from template files
+
+## Hand-rolled tmux status pills (catppuccin)
+
+`dot_tmux.conf.tmpl` contains hand-rolled status-bar pills (session, COPY, git) that need to visually match catppuccin's built-in modules. The spacing convention is non-obvious — get it wrong and pills look fatter than the built-in directory pill.
+
+**Inspect the reference pill before changing anything.** The catppuccin directory module is the canonical reference; copy its structure exactly:
+
+```bash
+tmux show-options -gv @catppuccin_status_directory       | xxd
+tmux show-options -gv @catppuccin_status_left_separator  | xxd  # 20 ee82b6 — leading space + glyph
+tmux show-options -gv @catppuccin_status_right_separator | xxd  # ee82b4 20 — glyph + trailing space
+tmux show-options -gv @catppuccin_directory_icon         | xxd  # ef81bb 20 — glyph + trailing space (icon-FIRST)
+```
+
+Rules for a pill that matches the directory module:
+
+1. **No literal space before `#{E:@catppuccin_status_left_separator}`** — the separator already includes its own leading space.
+2. **No literal space before `#{E:@catppuccin_status_right_separator}`** — same reason.
+3. **The icon block is `<glyph><space>`, not `<space><glyph><space>`** — icon first, then one trailing space inside the colored bg.
+4. **The text block starts with one leading space, no trailing space.** Right corner uses `fg=SURFACE_0` so the rounded shape closes the text bg.
+
+Canonical pill template (mauve example):
+
+```
+#[fg=#{E:@thm_mauve}]#[bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust},bg=#{E:@thm_mauve}]<ICON> #[fg=#{E:@thm_fg},bg=#{E:@thm_surface_0}]<TEXT>#[fg=#{E:@thm_surface_0}]#[bg=default]#{E:@catppuccin_status_right_separator}
+```
+
+### Editing files containing nerd-font (PUA) glyphs
+
+The `Edit` tool can silently strip Unicode private-use-area characters (U+E000–U+F8FF), which is where every nerd-font icon lives. The diff will look correct but `xxd` will show the bytes are gone.
+
+Workaround: write the glyph via a Python heredoc using `\uXXXX` escapes (keeps the source ASCII), then verify with `xxd`:
+
+```bash
+python3 <<'PY'
+import pathlib
+p = pathlib.Path('dot_tmux/executable_git-status.sh')
+s = p.read_text()
+p.write_text(s.replace('OLD', 'NEW \uf09b WITH GLYPH'))
+PY
+xxd dot_tmux/executable_git-status.sh | grep 'ef82 9b'  # confirm the bytes landed
+```
+
+### Git pill specifics
+
+- Source: `dot_tmux/executable_git-status.sh` → `~/.tmux/git-status.sh`
+- Wired in `dot_tmux.conf.tmpl` `status-right` as `#(~/.tmux/git-status.sh '#{pane_current_path}')`
+- Refreshes every `status-interval` (1s)
+- The script outputs tmux format markup (`#[fg=...]...`) — tmux re-expands `#{...}` directives in `#()` output, so theme color vars (`#{E:@thm_mauve}` etc.) resolve at render time
+- When outside a git work tree the script prints nothing, so the entire pill disappears
