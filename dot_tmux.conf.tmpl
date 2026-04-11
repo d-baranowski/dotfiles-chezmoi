@@ -147,7 +147,7 @@ set -gF @catppuccin_window_current_right_separator "#{@catppuccin_window_right_s
 # Hand-rolled session pill so the color can react to prefix mode (the catppuccin
 # session module bakes its color at load-time via `-gF`, so it can't change live).
 set -g status-left "#[fg=#{?client_prefix,#{E:@thm_red},#{E:@thm_green}},bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust},bg=#{?client_prefix,#{E:@thm_red},#{E:@thm_green}}]#{E:@catppuccin_session_icon}#[fg=#{E:@thm_fg},bg=#{E:@thm_surface_0}] #S #[fg=#{E:@thm_surface_0},bg=default]#{E:@catppuccin_status_right_separator} "
-set -g status-right "#{?pane_in_mode,#[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust}#,bg=#{E:@thm_yellow}] COPY #[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_right_separator} ,}  #{E:@catppuccin_status_directory}"
+set -g status-right "#{?pane_in_mode,#[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust}#,bg=#{E:@thm_yellow}] COPY #[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_right_separator} ,}#(~/.tmux/git-status.sh '#{pane_current_path}')#{E:@catppuccin_status_directory}"
 
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
 run '~/.tmux/plugins/tpm/tpm'
