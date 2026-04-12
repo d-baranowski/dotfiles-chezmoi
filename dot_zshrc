@@ -140,6 +140,7 @@ esac
 # pnpm end
 export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
+fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
 autoload -Uz compinit
 compinit
 
@@ -181,3 +182,4 @@ export PATH="$HOME/.local/bin:$PATH"
 alias ga='git add -p'
 
 eval "$(zoxide init --cmd j zsh)"
+eval "$(tv init zsh)"

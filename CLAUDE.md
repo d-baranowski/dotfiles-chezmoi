@@ -49,6 +49,7 @@ private_dot_config/        # ~/.config/
   git/ignore               #   Global gitignore
   opencode/                #   OpenCode AI tool config
   private_htop/            #   htop config
+  television/              #   Television fuzzy finder (config.toml + cable/ channels)
   private_karabiner/       #   Karabiner key remapping (large JSON)
   sketchybar/              #   Menu bar config + custom plugin scripts
 
