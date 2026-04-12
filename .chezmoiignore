@@ -2,6 +2,9 @@
 .tmux/plugins/
 .oh-my-zsh/custom/plugins/
 
+# Neovim lock file - managed by lazy.nvim, not chezmoi
+.config/nvim/lazy-lock.json
+
 # Repo-meta docs — not dotfiles, should not be copied to $HOME
 AGENTS.md
 CLAUDE.md
