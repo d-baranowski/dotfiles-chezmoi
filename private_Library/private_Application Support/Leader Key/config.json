@@ -1,0 +1,613 @@
+{
+  "actions" : [
+    {
+      "actions" : [
+        {
+          "key" : "m",
+          "label" : "workspace M",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace M"
+        },
+        {
+          "key" : "b",
+          "label" : "workspace B",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace B"
+        },
+        {
+          "key" : "n",
+          "label" : "workspace N",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace N"
+        },
+        {
+          "key" : "s",
+          "label" : "workspace S",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace S"
+        },
+        {
+          "key" : "c",
+          "label" : "workspace C",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace C"
+        },
+        {
+          "key" : "d",
+          "label" : "workspace D",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace D"
+        },
+        {
+          "key" : "t",
+          "label" : "workspace T",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace T"
+        },
+        {
+          "key" : "z",
+          "label" : "workspace Z",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace Z"
+        },
+        {
+          "key" : "i",
+          "label" : "workspace I",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace I"
+        },
+        {
+          "key" : "a",
+          "label" : "workspace A",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace A"
+        },
+        {
+          "key" : "1",
+          "label" : "workspace 1",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 1"
+        },
+        {
+          "key" : "2",
+          "label" : "workspace 2",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 2"
+        },
+        {
+          "key" : "3",
+          "label" : "workspace 3",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 3"
+        },
+        {
+          "key" : "4",
+          "label" : "workspace 4",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 4"
+        },
+        {
+          "key" : "5",
+          "label" : "workspace 5",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 5"
+        },
+        {
+          "key" : "6",
+          "label" : "workspace 6",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 6"
+        },
+        {
+          "key" : "7",
+          "label" : "workspace 7",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 7"
+        },
+        {
+          "key" : "8",
+          "label" : "workspace 8",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 8"
+        },
+        {
+          "key" : "9",
+          "label" : "workspace 9",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace workspace 9"
+        }
+      ],
+      "iconPath" : "widget.medium",
+      "key" : "g",
+      "label" : "go to workspace",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        {
+          "key" : "m",
+          "label" : "move to M",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace M"
+        },
+        {
+          "key" : "b",
+          "label" : "move to B",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace B"
+        },
+        {
+          "key" : "n",
+          "label" : "move to N",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace N"
+        },
+        {
+          "key" : "s",
+          "label" : "move to S",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace S"
+        },
+        {
+          "key" : "c",
+          "label" : "move to C",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace C"
+        },
+        {
+          "key" : "d",
+          "label" : "move to D",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace D"
+        },
+        {
+          "key" : "t",
+          "label" : "move to T",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace T"
+        },
+        {
+          "key" : "z",
+          "label" : "move to Z",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace Z"
+        },
+        {
+          "key" : "i",
+          "label" : "move to I",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace I"
+        },
+        {
+          "key" : "a",
+          "label" : "move to A",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace A"
+        },
+        {
+          "key" : "1",
+          "label" : "move to 1",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 1"
+        },
+        {
+          "key" : "2",
+          "label" : "move to 2",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 2"
+        },
+        {
+          "key" : "3",
+          "label" : "move to 3",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 3"
+        },
+        {
+          "key" : "4",
+          "label" : "move to 4",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 4"
+        },
+        {
+          "key" : "5",
+          "label" : "move to 5",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 5"
+        },
+        {
+          "key" : "6",
+          "label" : "move to 6",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 6"
+        },
+        {
+          "key" : "7",
+          "label" : "move to 7",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 7"
+        },
+        {
+          "key" : "8",
+          "label" : "move to 8",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 8"
+        },
+        {
+          "key" : "9",
+          "label" : "move to 9",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 9"
+        }
+      ],
+      "iconPath" : "widget.medium.badge.plus",
+      "key" : "v",
+      "label" : "Move to workspace",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        {
+          "key" : "a",
+          "label" : "area screenshot",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh area"
+        },
+        {
+          "key" : "f",
+          "label" : "full screenshot",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh full"
+        },
+        {
+          "key" : "w",
+          "label" : "window screenshot",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh window"
+        },
+        {
+          "key" : "r",
+          "label" : "record screen",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh record"
+        },
+        {
+          "key" : "o",
+          "label" : "open screenshots folder",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh open"
+        }
+      ],
+      "iconPath" : "camera",
+      "key" : "s",
+      "label" : "Screenshot",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        {
+          "actions" : [
+            {
+              "key" : "m",
+              "label" : "workspace M",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace M"
+            },
+            {
+              "key" : "b",
+              "label" : "workspace B",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace B"
+            },
+            {
+              "key" : "n",
+              "label" : "workspace N",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace N"
+            },
+            {
+              "key" : "s",
+              "label" : "workspace S",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace S"
+            },
+            {
+              "key" : "c",
+              "label" : "workspace C",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace C"
+            },
+            {
+              "key" : "d",
+              "label" : "workspace D",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace D"
+            },
+            {
+              "key" : "t",
+              "label" : "workspace T",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace T"
+            },
+            {
+              "key" : "z",
+              "label" : "workspace Z",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace Z"
+            },
+            {
+              "key" : "i",
+              "label" : "workspace I",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace I"
+            },
+            {
+              "key" : "a",
+              "label" : "workspace A",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace A"
+            },
+            {
+              "key" : "1",
+              "label" : "workspace 1",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 1"
+            },
+            {
+              "key" : "2",
+              "label" : "workspace 2",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 2"
+            },
+            {
+              "key" : "3",
+              "label" : "workspace 3",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 3"
+            },
+            {
+              "key" : "4",
+              "label" : "workspace 4",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 4"
+            },
+            {
+              "key" : "5",
+              "label" : "workspace 5",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 5"
+            },
+            {
+              "key" : "6",
+              "label" : "workspace 6",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 6"
+            },
+            {
+              "key" : "7",
+              "label" : "workspace 7",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 7"
+            },
+            {
+              "key" : "8",
+              "label" : "workspace 8",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 8"
+            },
+            {
+              "key" : "9",
+              "label" : "workspace 9",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace workspace 9"
+            }
+          ],
+          "key" : "g",
+          "label" : "go to workspace",
+          "type" : "group"
+        },
+        {
+          "key" : "b",
+          "label" : "Chrome",
+          "type" : "application",
+          "value" : "/Applications/Chrome.app"
+        },
+        {
+          "key" : "s",
+          "label" : "Slack",
+          "type" : "application",
+          "value" : "/Applications/Slack.app"
+        },
+        {
+          "key" : "w",
+          "label" : "WhatsApp",
+          "type" : "application",
+          "value" : "/Applications/WhatsApp.app"
+        },
+        {
+          "key" : "o",
+          "label" : "Obsidian",
+          "type" : "application",
+          "value" : "/Applications/Obsidian.app"
+        },
+        {
+          "key" : "t",
+          "label" : "Alacritty",
+          "type" : "application",
+          "value" : "/Applications/Alacritty.app"
+        },
+        {
+          "key" : "a",
+          "label" : "Activity Monitor",
+          "type" : "application",
+          "value" : "/System/Applications/Utilities/Activity Monitor.app"
+        },
+        {
+          "key" : "f",
+          "label" : "Applications folder (manage/trash)",
+          "type" : "command",
+          "value" : "open /Applications"
+        }
+      ],
+      "iconPath" : "append.page",
+      "key" : "o",
+      "label" : "App",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        {
+          "key" : "f",
+          "label" : "fullscreen",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace fullscreen && sketchybar --trigger aerospace_mode_changed"
+        },
+        {
+          "key" : "F",
+          "label" : "flatten-workspace-tree",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace flatten-workspace-tree && sketchybar --trigger aerospace_mode_changed"
+        },
+        {
+          "actions" : [
+            {
+              "key" : "h",
+              "label" : "left",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace join-with left"
+            },
+            {
+              "key" : "j",
+              "label" : "down",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace join-with down"
+            },
+            {
+              "key" : "k",
+              "label" : "up",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace join-with up"
+            },
+            {
+              "key" : "l",
+              "label" : "right",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace join-with right"
+            }
+          ],
+          "key" : "j",
+          "label" : "join-with",
+          "type" : "group"
+        },
+        {
+          "actions" : [
+            {
+              "key" : "a",
+              "label" : "accordion",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace layout accordion horizontal vertical && sketchybar --trigger aerospace_mode_changed"
+            },
+            {
+              "key" : "f",
+              "label" : "floating",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace layout floating tiling && sketchybar --trigger aerospace_mode_changed"
+            },
+            {
+              "key" : "t",
+              "label" : "tiles",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace layout tiles vertical horizontal && sketchybar --trigger aerospace_mode_changed"
+            }
+          ],
+          "key" : "l",
+          "label" : "layout",
+          "type" : "group"
+        },
+        {
+          "actions" : [
+            {
+              "key" : "n",
+              "label" : "next monitor",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace move-workspace-to-monitor --wrap-around next"
+            },
+            {
+              "key" : "p",
+              "label" : "prev monitor",
+              "type" : "command",
+              "value" : "/opt/homebrew/bin/aerospace move-workspace-to-monitor --wrap-around prev"
+            }
+          ],
+          "key" : "M",
+          "label" : "move workspace to monitor",
+          "type" : "group"
+        },
+        {
+          "key" : "R",
+          "label" : "reload-config",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace reload-config"
+        },
+        {
+          "key" : "s",
+          "label" : "mode resize",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace mode resize && sketchybar --trigger aerospace_mode_changed"
+        },
+        {
+          "key" : "c",
+          "type" : "url",
+          "value" : "raycast://extensions/raycast/window-management/center"
+        },
+        {
+          "key" : "o",
+          "label" : "resize smart -50 (shrink)",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace resize smart -50"
+        },
+        {
+          "key" : "p",
+          "label" : "resize smart +50 (grow)",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/aerospace resize smart +50"
+        }
+      ],
+      "iconPath" : "rectangle.grid.2x2",
+      "key" : "w",
+      "label" : "Aerospace",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        {
+          "key" : "r",
+          "label" : "reload leader",
+          "type" : "command",
+          "value" : "/bin/bash -c 'killall \"Leader Key\"; sleep 0.3; open -a \"Leader Key\"'"
+        },
+        {
+          "key" : "m",
+          "label" : "toggle mic",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/toggle_mic.sh"
+        },
+        {
+          "key" : "n",
+          "label" : "clear notifications",
+          "type" : "command",
+          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/clear_notifications.sh"
+        },
+        {
+          "key" : "k",
+          "label" : "force quit",
+          "type" : "command",
+          "value" : "osascript -e 'tell application \"System Events\" to key code 53 using {command down, option down}'"
+        }
+      ],
+      "key" : "m",
+      "label" : "Main",
+      "type" : "group"
+    }
+  ],
+  "type" : "group"
+}
