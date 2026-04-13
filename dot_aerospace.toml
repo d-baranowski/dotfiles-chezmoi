@@ -176,6 +176,9 @@ on-mode-changed = ['exec-and-forget sketchybar --trigger aerospace_mode_changed'
     # Peek/zoom: fullscreen toggle (preserves tiling position)
     alt-space = 'fullscreen'
 
+    # Terminate current window
+    shift-f10 = 'close'
+
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.service.binding]
