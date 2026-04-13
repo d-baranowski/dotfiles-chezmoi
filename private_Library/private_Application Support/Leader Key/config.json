@@ -250,31 +250,31 @@
           "key" : "a",
           "label" : "area screenshot",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh area"
+          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh area"
         },
         {
           "key" : "f",
           "label" : "full screenshot",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh full"
+          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh full"
         },
         {
           "key" : "w",
           "label" : "window screenshot",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh window"
+          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh window"
         },
         {
           "key" : "r",
           "label" : "record screen",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh record"
+          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh record"
         },
         {
           "key" : "o",
           "label" : "open screenshots folder",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/screenshot.sh open"
+          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh open"
         }
       ],
       "iconPath" : "camera",
@@ -589,13 +589,13 @@
           "key" : "m",
           "label" : "toggle mic",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/toggle_mic.sh"
+          "value" : "$HOME/.config/sketchybar/plugins/toggle_mic.sh"
         },
         {
           "key" : "n",
           "label" : "clear notifications",
           "type" : "command",
-          "value" : "/Users/danielbaranowski/.config/sketchybar/plugins/clear_notifications.sh"
+          "value" : "$HOME/.config/sketchybar/plugins/clear_notifications.sh"
         },
         {
           "key" : "k",
@@ -606,6 +606,108 @@
       ],
       "key" : "m",
       "label" : "Main",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        { "key" : "h", "label" : "History picker", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showHistory()'" },
+        { "key" : "s", "label" : "Search", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showHistory()'" },
+        { "key" : "r", "label" : "Show registers", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" },
+        { "key" : "i", "label" : "Info / status", "type" : "command", "value" : "/opt/homebrew/bin/cb info" },
+        {
+          "actions" : [
+            { "key" : "e", "label" : "paste cb_email", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh email" },
+            { "key" : "s", "label" : "paste cb_sig", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh sig" },
+            { "key" : "a", "label" : "paste cb_addr", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh addr" }
+          ],
+          "key" : "n",
+          "label" : "Snippets",
+          "type" : "group"
+        }
+      ],
+      "iconPath" : "doc.on.clipboard",
+      "key" : "c",
+      "label" : "Clipboard",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        { "key" : "a", "label" : "-> cb_a", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh a" },
+        { "key" : "b", "label" : "-> cb_b", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh b" },
+        { "key" : "c", "label" : "-> cb_c", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh c" },
+        { "key" : "d", "label" : "-> cb_d", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh d" },
+        { "key" : "e", "label" : "-> cb_e", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh e" },
+        { "key" : "f", "label" : "-> cb_f", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh f" },
+        { "key" : "g", "label" : "-> cb_g", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh g" },
+        { "key" : "h", "label" : "-> cb_h", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh h" },
+        { "key" : "i", "label" : "-> cb_i", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh i" },
+        { "key" : "j", "label" : "-> cb_j", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh j" },
+        { "key" : "k", "label" : "-> cb_k", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh k" },
+        { "key" : "l", "label" : "-> cb_l", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh l" },
+        { "key" : "m", "label" : "-> cb_m", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh m" },
+        { "key" : "n", "label" : "-> cb_n", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh n" },
+        { "key" : "o", "label" : "-> cb_o", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh o" },
+        { "key" : "p", "label" : "-> cb_p", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh p" },
+        { "key" : "q", "label" : "-> cb_q", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh q" },
+        { "key" : "r", "label" : "-> cb_r", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh r" },
+        { "key" : "s", "label" : "-> cb_s", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh s" },
+        { "key" : "t", "label" : "-> cb_t", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh t" },
+        { "key" : "u", "label" : "-> cb_u", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh u" },
+        { "key" : "v", "label" : "-> cb_v", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh v" },
+        { "key" : "w", "label" : "-> cb_w", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh w" },
+        { "key" : "x", "label" : "-> cb_x", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh x" },
+        { "key" : "y", "label" : "-> cb_y", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh y" },
+        { "key" : "z", "label" : "-> cb_z", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh z" },
+        { "key" : "?", "label" : "Show all", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" }
+      ],
+      "iconPath" : "arrow.right.doc.on.clipboard",
+      "key" : "y",
+      "label" : "Yank to register",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        { "key" : "a", "label" : "<- cb_a", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh a" },
+        { "key" : "b", "label" : "<- cb_b", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh b" },
+        { "key" : "c", "label" : "<- cb_c", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh c" },
+        { "key" : "d", "label" : "<- cb_d", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh d" },
+        { "key" : "e", "label" : "<- cb_e", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh e" },
+        { "key" : "f", "label" : "<- cb_f", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh f" },
+        { "key" : "g", "label" : "<- cb_g", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh g" },
+        { "key" : "h", "label" : "<- cb_h", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh h" },
+        { "key" : "i", "label" : "<- cb_i", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh i" },
+        { "key" : "j", "label" : "<- cb_j", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh j" },
+        { "key" : "k", "label" : "<- cb_k", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh k" },
+        { "key" : "l", "label" : "<- cb_l", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh l" },
+        { "key" : "m", "label" : "<- cb_m", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh m" },
+        { "key" : "n", "label" : "<- cb_n", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh n" },
+        { "key" : "o", "label" : "<- cb_o", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh o" },
+        { "key" : "p", "label" : "<- cb_p", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh p" },
+        { "key" : "q", "label" : "<- cb_q", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh q" },
+        { "key" : "r", "label" : "<- cb_r", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh r" },
+        { "key" : "s", "label" : "<- cb_s", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh s" },
+        { "key" : "t", "label" : "<- cb_t", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh t" },
+        { "key" : "u", "label" : "<- cb_u", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh u" },
+        { "key" : "v", "label" : "<- cb_v", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh v" },
+        { "key" : "w", "label" : "<- cb_w", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh w" },
+        { "key" : "x", "label" : "<- cb_x", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh x" },
+        { "key" : "y", "label" : "<- cb_y", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh y" },
+        { "key" : "z", "label" : "<- cb_z", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh z" },
+        { "key" : "?", "label" : "Show all", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" }
+      ],
+      "iconPath" : "doc.on.clipboard.fill",
+      "key" : "p",
+      "label" : "Paste from register",
+      "type" : "group"
+    },
+    {
+      "actions" : [
+        { "key" : "l", "label" : "List all registers", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" },
+        { "key" : "n", "label" : "Sync from Neovim", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.nvim.pickSocket(function(s) for l in (\"abcdefghijklmnopqrstuvwxyz\"):gmatch(\".\") do local c = clipboard.nvim.queryRegister(s, l); if c and c ~= \"\" then os.execute(clipboard.config.cbPath .. \" copy_\" .. l .. \" \\\"\" .. c:gsub(\"\\\"\",\"\\\\\\\\\\\"\") .. \"\\\"\") end end; hs.alert.show(\"Synced nvim registers\") end)'" }
+      ],
+      "iconPath" : "list.clipboard",
+      "key" : "r",
+      "label" : "Register mgmt",
       "type" : "group"
     }
   ],

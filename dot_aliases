@@ -28,6 +28,8 @@ gitignore() {
 	echo $1 >> .gitignore
 }
 
+alias vim='nvim'
+alias ovim='\vim'
 alias search="ack"
 alias dbpod="kubectl get pods -n external | awk '{print $1}' | sed -n '1d;p'"
 alias dcu="docker compose up"

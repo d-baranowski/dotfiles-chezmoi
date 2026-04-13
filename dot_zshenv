@@ -9,3 +9,7 @@ export OTEL_METRIC_EXPORT_INTERVAL=10000
 export OTEL_LOGS_EXPORT_INTERVAL=5000
 
 export COPILOT_OTEL_ENABLED=true
+
+# cb (Slackadays/Clipboard) configuration — in zshenv so Hammerspoon (non-interactive) sees it
+export CLIPBOARD_EDITOR='nvim'
+export CLIPBOARD_CUSTOMPERSIST='cb_[a-z]|cb_sig|cb_email|cb_addr'
