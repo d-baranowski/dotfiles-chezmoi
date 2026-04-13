@@ -67,8 +67,11 @@ handle_click() {
     tmux switch-client -t "$SESSION" 2>/dev/null
   fi
 
-  # Clear all notifications — user is looking now
-  echo '[]' > "$STATE_FILE"
+  # Remove only the actioned notification (match by timestamp)
+  local TS
+  TS=$(echo "$ENTRY" | jq -r '.ts')
+  jq --arg ts "$TS" '[.[] | select(.ts != ($ts | tonumber))]' "$STATE_FILE" > "${STATE_FILE}.tmp" \
+    && mv "${STATE_FILE}.tmp" "$STATE_FILE"
   sketchybar --trigger claude_notification 2>/dev/null
 }
 

@@ -598,6 +598,12 @@
           "value" : "$HOME/.config/sketchybar/plugins/clear_notifications.sh"
         },
         {
+          "key" : "b",
+          "label" : "go to claude notification",
+          "type" : "command",
+          "value" : "$HOME/.config/sketchybar/plugins/claude_notify_goto.sh"
+        },
+        {
           "key" : "k",
           "label" : "force quit",
           "type" : "command",
