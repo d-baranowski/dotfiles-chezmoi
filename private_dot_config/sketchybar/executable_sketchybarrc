@@ -42,6 +42,7 @@ sketchybar --default "${default[@]}"
 
 sketchybar --add event aerospace_workspace_change
 sketchybar --add event aerospace_mode_changed
+sketchybar --add event claude_notification
 
 ##### Workspace Pills #####
 # One pill per workspace: bold letter on the left, app-icon glyphs on the right.
@@ -240,43 +241,38 @@ sketchybar --add item clock right \
   background.corner_radius=8 \
   background.height=25
 
-##### App Launchers (right side, next to calendar) #####
-# Same pill styling as calendar_event. Glyphs from sketchybar-app-font.
-launcher_defaults=(
-  icon.font="sketchybar-app-font:Regular:16.0"
-  icon.color=$WHITE
-  icon.padding_left=8
-  icon.padding_right=8
-  icon.y_offset=-1
-  label.drawing=off
-  background.drawing=on
-  background.color="$CAL_EVENT_BG_COLOR"
-  background.corner_radius=8
-  background.height=25
-)
-
-# Added in right-to-left order so they sit just left of calendar_event:
-#   ... finder  alacritty  goland  code  calendar_event
-sketchybar --add item launcher.code right \
-  --set launcher.code "${launcher_defaults[@]}" \
-                      icon=":code:" \
-                      click_script="open -a 'Visual Studio Code'" \
-  --add item launcher.goland right \
-  --set launcher.goland "${launcher_defaults[@]}" \
-                        icon=":goland:" \
-                        click_script="open -a 'GoLand'" \
-  --add item launcher.alacritty right \
-  --set launcher.alacritty "${launcher_defaults[@]}" \
-                           icon=":alacritty:" \
-                           click_script="open -a 'Alacritty'" \
-  --add item launcher.finder right \
-  --set launcher.finder "${launcher_defaults[@]}" \
-                        icon=":finder:" \
-                        click_script="open -a 'Finder'" \
-  --add item launcher.spotlight right \
-  --set launcher.spotlight "${launcher_defaults[@]}" \
-                           icon=":spotlight:" \
-                           click_script="osascript -e 'tell application \"System Events\" to keystroke \" \" using command down'"
+##### Claude Code Notification Bell (right side, next to calendar) #####
+# Shows a bell icon that lights up when Claude needs attention.
+# Click navigates to the notification's aerospace workspace + tmux session.
+sketchybar --add item claude_bell right \
+  --set claude_bell \
+  icon="󰂜" \
+  icon.font="Hack Nerd Font:Regular:16.0" \
+  icon.color=0x77ffffff \
+  icon.padding_left=8 \
+  icon.padding_right=8 \
+  label.drawing=off \
+  label.font="SF Pro:Bold:11.0" \
+  label.color=$YELLOW \
+  label.padding_left=0 \
+  label.padding_right=8 \
+  background.drawing=off \
+  background.color="$ITEM_BG_COLOR" \
+  background.corner_radius=8 \
+  background.height=25 \
+  script="$PLUGIN_DIR/claude_notify.sh" \
+  --subscribe claude_bell claude_notification mouse.clicked \
+  --add item claude_mute right \
+  --set claude_mute \
+  icon="󰕾" \
+  icon.font="Hack Nerd Font:Regular:13.0" \
+  icon.color=$WHITE \
+  icon.padding_left=4 \
+  icon.padding_right=4 \
+  label.drawing=off \
+  background.drawing=off \
+  script="$PLUGIN_DIR/claude_notify_mute.sh" \
+  --subscribe claude_mute mouse.clicked
 
 ##### Force all scripts to run the first time (never do this in a script) #####
 sketchybar --update
