@@ -24,8 +24,7 @@ local function captureToClipboard()
   if contents == lastSeen then return end
   lastSeen = contents
 
-  local task = hs.task.new(config.cbPath, nil, function() return true end, { "copy" })
-  task:setInput(contents)
+  local task = hs.task.new(config.cbPath, nil, function() return true end, { "copy", contents })
   task:start()
 end
 

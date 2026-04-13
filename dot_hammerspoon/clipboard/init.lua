@@ -27,8 +27,7 @@ function M.yankSelectionTo(letter)
     local content = hs.pasteboard.getContents()
     if not content then return end
     local task = hs.task.new(M.config.cbPath, nil, function() return true end,
-      { "copy_" .. letter })
-    task:setInput(content)
+      { "copy_" .. letter, content })
     task:start()
   end)
 end

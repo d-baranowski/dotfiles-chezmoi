@@ -244,3 +244,8 @@ on-mode-changed = ['exec-and-forget sketchybar --trigger aerospace_mode_changed'
 [[on-window-detected]]
     if.app-id = 'org.videolan.vlc'
     run = 'layout floating'
+
+# Hammerspoon: chooser/picker windows should float, not tile
+[[on-window-detected]]
+    if.app-id = 'org.hammerspoon.Hammerspoon'
+    run = 'layout floating'
