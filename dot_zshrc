@@ -182,3 +182,7 @@ alias ga='git add -p'
 
 eval "$(zoxide init --cmd j zsh)"
 eval "$(tv init zsh)"
+_tv_channel_names() {
+  compadd $(tv list-channels 2>/dev/null)
+}
+eval "$(tv completions zsh | sed 's/channel shall we watch?:_default/channel shall we watch?:_tv_channel_names/')"

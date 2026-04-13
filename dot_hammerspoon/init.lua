@@ -11,6 +11,15 @@ if not ok then
   print("Clipboard module error: " .. tostring(err))
 end
 
+-- Keybindings cheatsheet: fuzzy-searchable picker
+local ok2, err2 = pcall(function()
+  keybindings = require("keybindings")
+end)
+if not ok2 then
+  hs.alert.show("Keybindings module error: " .. tostring(err2))
+  print("Keybindings module error: " .. tostring(err2))
+end
+
 -- shift+f6 → go to most recent Claude notification (same as bell click)
 hs.hotkey.bind({"shift"}, "f6", function()
   hs.task.new(os.getenv("HOME") .. "/.config/sketchybar/plugins/claude_notify_goto.sh", nil):start()

@@ -1,0 +1,73 @@
+[metadata]
+name = "claude-sessions"
+description = "Browse and resume Claude Code sessions"
+requirements = ["claude", "python3"]
+
+[source]
+command = """python3 -c "
+import json, os, glob, datetime, re
+base = os.path.expanduser('~/.claude/projects')
+sessions = []
+def resolve_cwd(name):
+    parts = name.lstrip('-').split('-')
+    def try_join(parts, idx):
+        if idx == len(parts):
+            p = '/' + '/'.join(parts)
+            return p if os.path.isdir(p) else None
+        result = try_join(parts, idx + 1)
+        if result:
+            return result
+        if idx + 1 < len(parts):
+            merged = parts[:idx] + [parts[idx] + '-' + parts[idx+1]] + parts[idx+2:]
+            result = try_join(merged, idx)
+            if result:
+                return result
+        return None
+    return try_join(parts, 0) or '/' + '/'.join(parts)
+for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
+    sid = os.path.basename(jsonl).replace('.jsonl', '')
+    if sid.startswith('agent-'):
+        continue
+    mtime = os.path.getmtime(jsonl)
+    project = os.path.basename(os.path.dirname(jsonl))
+    cwd = resolve_cwd(project)
+    first_msg = ''
+    try:
+        with open(jsonl) as f:
+            for line in f:
+                d = json.loads(line.strip())
+                if not first_msg and d.get('type') == 'user':
+                    msg = d.get('message', {}).get('content', '')
+                    if isinstance(msg, str):
+                        first_msg = msg
+                    elif isinstance(msg, list):
+                        for c in msg:
+                            if isinstance(c, dict) and c.get('type') == 'text':
+                                first_msg = c['text']
+                                break
+                if first_msg:
+                    break
+    except Exception:
+        pass
+    label = re.sub(r'<[^>]+>', '', first_msg).strip()[:120].replace('\\n', ' ') or sid
+    dt = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M')
+    short_project = os.path.basename(cwd)
+    sessions.append((mtime, dt + '\\t' + short_project + '\\t' + label + '\\t' + sid + '\\t' + cwd))
+sessions.sort(key=lambda s: s[0], reverse=True)
+for _, line in sessions:
+    print(line)
+"
+"""
+display = "{split:\t:0} [{split:\t:1}] {split:\t:2}"
+output = "{split:\t:3}\t{split:\t:4}"
+
+[preview]
+command = "python3 ~/.config/television/claude-session-preview.py '{split:\t:3}'"
+
+[keybindings]
+enter = "actions:resume"
+
+[actions.resume]
+description = "Resume the selected Claude session"
+command = "cd '{split:\t:4}' && claude --resume '{split:\t:3}'"
+mode = "execute"

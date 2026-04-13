@@ -608,6 +608,12 @@
           "label" : "force quit",
           "type" : "command",
           "value" : "osascript -e 'tell application \"System Events\" to key code 53 using {command down, option down}'"
+        },
+        {
+          "key" : "/",
+          "label" : "search keybindings",
+          "type" : "command",
+          "value" : "/opt/homebrew/bin/hs -c 'keybindings.picker.show()'"
         }
       ],
       "key" : "m",

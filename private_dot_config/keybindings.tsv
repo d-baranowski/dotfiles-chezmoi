@@ -1,0 +1,231 @@
+# Keybinding reference — all shortcuts across the system
+# Format: app<TAB>shortcut<TAB>description
+# Lines starting with # are comments. Blank lines are ignored.
+# vim: noexpandtab tabstop=32
+
+# ── tmux (prefix: ctrl-k) ──────────────────────────────────────
+
+tmux	prefix h	focus pane left
+tmux	prefix j	focus pane down
+tmux	prefix k	focus pane up
+tmux	prefix l	focus pane right
+tmux	prefix H	resize pane left 5
+tmux	prefix J	resize pane down 5
+tmux	prefix K	resize pane up 5
+tmux	prefix L	resize pane right 5
+tmux	prefix |	split pane horizontal
+tmux	prefix -	split pane vertical
+tmux	prefix w	new window
+tmux	prefix W	rename window
+tmux	prefix s	new session
+tmux	prefix S	rename session
+tmux	prefix c	enter copy mode
+tmux	prefix v	begin selection (copy mode)
+tmux	prefix V	line selection (copy mode)
+tmux	prefix y	copy selection (copy mode)
+tmux	prefix u	scroll up half page (copy mode)
+tmux	prefix i	scroll down half page (copy mode)
+tmux	prefix p	toggle floating pane (floax)
+tmux	prefix o	session switcher (sessionx)
+tmux	prefix R	reload tmux config
+tmux	prefix r	run-stack-hot dev session
+
+# ── aerospace ───────────────────────────────────────────────────
+
+aerospace	alt-h	focus left
+aerospace	alt-j	focus down
+aerospace	alt-k	focus up
+aerospace	alt-l	focus right
+aerospace	alt-shift-h	move window left
+aerospace	alt-shift-j	move window down
+aerospace	alt-shift-k	move window up
+aerospace	alt-shift-l	move window right
+aerospace	alt-o	resize smart -50 (shrink)
+aerospace	alt-p	resize smart +50 (grow)
+aerospace	alt-m	workspace M
+aerospace	alt-b	workspace B
+aerospace	alt-n	workspace N
+aerospace	alt-s	workspace S
+aerospace	alt-d	workspace D
+aerospace	alt-t	workspace T
+aerospace	alt-i	workspace I
+aerospace	alt-/	layout tiles
+aerospace	alt-,	layout accordion
+aerospace	alt-space	toggle fullscreen
+aerospace	shift-f10	close window
+aerospace	alt-shift-;	enter service mode
+
+# ── special key (bottom-right key, programmed as shift-f3) ─────
+
+special	special x	open Leader Key App
+special	special b	jump to bell notification
+special	special .	kill window
+
+# ── leader key (activated via special x) ────────────────────────
+
+leader	leader g {letter/num}	go to workspace
+leader	leader v {letter/num}	move window to workspace
+leader	leader s a	area screenshot
+leader	leader s f	full screenshot
+leader	leader s w	window screenshot
+leader	leader s r	record screen
+leader	leader s o	open screenshots folder
+leader	leader o g {letter/num}	go to workspace (from app menu)
+leader	leader o b	open Chrome
+leader	leader o s	open Slack
+leader	leader o w	open WhatsApp
+leader	leader o o	open Obsidian
+leader	leader o t	open Alacritty
+leader	leader o a	open Activity Monitor
+leader	leader o f	open Applications folder
+leader	leader w f	toggle fullscreen
+leader	leader w F	flatten workspace tree
+leader	leader w j {h/j/k/l}	join with direction
+leader	leader w l a	layout accordion
+leader	leader w l f	layout floating
+leader	leader w l t	layout tiles
+leader	leader w M n	move workspace to next monitor
+leader	leader w M p	move workspace to prev monitor
+leader	leader w R	reload aerospace config
+leader	leader w s	enter resize mode
+leader	leader w c	center window (raycast)
+leader	leader w o	resize shrink -50
+leader	leader w p	resize grow +50
+leader	leader m r	reload leader key
+leader	leader m m	toggle mic
+leader	leader m n	clear notifications
+leader	leader m b	go to claude notification
+leader	leader m k	force quit dialog
+leader	leader m /	search keybindings
+leader	leader c h	clipboard history picker
+leader	leader c s	clipboard search
+leader	leader c r	show clipboard registers
+leader	leader c i	clipboard info/status
+leader	leader c n {e/s/a}	paste snippet (email/sig/addr)
+leader	leader y {a-z}	yank selection to register
+leader	leader y ?	show all registers
+leader	leader p {a-z}	paste from register
+leader	leader p ?	show all registers
+leader	leader r l	list all registers
+leader	leader r n	sync registers from neovim
+
+# ── karabiner (system-level remaps) ────────────────────────────
+
+karabiner	home	beginning of line (ctrl-a)
+karabiner	end	end of line (ctrl-e)
+karabiner	shift-home	select to beginning of line
+karabiner	shift-end	select to end of line
+karabiner	option-tab	app switcher (cmd-tab)
+karabiner	ctrl-left	word left
+karabiner	ctrl-right	word right
+karabiner	ctrl-up	page up
+karabiner	ctrl-down	page down
+karabiner	ctrl-c	copy (non-terminal apps)
+karabiner	ctrl-v	paste (non-terminal apps)
+karabiner	ctrl-x	cut (non-terminal apps)
+
+# ── hammerspoon ─────────────────────────────────────────────────
+
+hammerspoon	shift-f6	go to claude notification
+hammerspoon	cmd-alt-v	clipboard history picker
+hammerspoon	cmd-alt-shift-v	clipboard registers picker
+
+# ── neovim (lazyvim base) ───────────────────────────────────────
+
+nvim	jj (insert)	escape to normal mode
+nvim	jk (insert)	escape to normal mode
+nvim	shift-q (normal)	open neotree file explorer
+
+# ── vscode ──────────────────────────────────────────────────────
+
+vscode	ctrl-,	toggle terminal
+vscode	ctrl-alt-l	format document
+vscode	alt-v	paste
+vscode	alt-z	undo
+vscode	ctrl-shift-=	zoom in
+vscode	ctrl-shift--	zoom out
+
+# ── ideavim ─────────────────────────────────────────────────────
+
+ideavim	\ (normal)	quote register selector
+ideavim	< (normal)	undo
+ideavim	> (normal)	redo
+ideavim	w (normal)	next diagnostic
+ideavim	e (normal)	prev diagnostic
+ideavim	b (normal)	prev buffer diagnostic
+
+# ── vim ─────────────────────────────────────────────────────────
+
+vim	space w	save file
+vim	space q	quit
+vim	space r (visual)	select register for paste
+vim	space y (visual)	copy to system clipboard
+vim	space p	paste from register
+vim	space x	paste from register (alt)
+vim	esc (normal)	clear search highlight
+
+# ── alacritty ───────────────────────────────────────────────────
+
+alacritty	alt-c	copy
+alacritty	alt-v	paste
+alacritty	shift-esc	toggle vi mode
+alacritty	ctrl-shift-=	increase font size
+alacritty	ctrl-shift--	decrease font size
+alacritty	ctrl-shift-0	reset font size
+
+# ── git aliases ─────────────────────────────────────────────────
+
+git	git s	status
+git	git lg	log graph with colors
+git	git cm "msg"	commit with message
+git	git co	checkout
+git	git br	branch
+git	git df	diff --name-only
+git	git undo	undo last commit (soft reset)
+git	git amend	amend last commit
+git	git staged	diff --cached (staged changes)
+git	git ri	rebase interactive
+git	git rim	rebase interactive on master
+git	git pc	push current branch
+git	git last	show last commit
+git	git del	delete branch
+git	git brl	branch list (sorted by date)
+git	git pbr	push new branch upstream
+git	git aliases	list all git aliases
+
+# ── zsh / shell ─────────────────────────────────────────────────
+
+zsh	ctrl-t	television smart autocomplete
+zsh	ctrl-r	command history (television)
+zsh	set -o vi	vi keybindings in shell
+zsh	j <dir>	zoxide jump to directory
+zsh	ga	git add
+zsh	gs	git status
+zsh	g	git
+zsh	br	git branch
+zsh	gco	git checkout
+zsh	gc	git commit
+zsh	gpl	git pull
+zsh	gps	git push
+zsh	gl	git log --oneline
+zsh	dcu	docker compose up -d
+zsh	dcd	docker compose down
+zsh	tf	terraform
+zsh	kg	kubectl get
+zsh	ka	kubectl apply
+zsh	kc	kubectx
+zsh	vim	nvim (alias)
+zsh	search	ripgrep (alias)
+
+# ── sketchybar (click actions) ──────────────────────────────────
+
+sketchybar	click workspace pill	switch to that workspace
+sketchybar	click layout icon	toggle tiles/accordion
+sketchybar	click slack icon	open slack + switch to workspace S
+sketchybar	click volume icon	toggle mute
+sketchybar	click calendar	open calendar app
+sketchybar	click claude bell	go to claude notification
+
+# ── claude code ─────────────────────────────────────────────────
+
+claude-code	shift-f5	push to talk (voice)
