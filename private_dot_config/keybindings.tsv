@@ -226,6 +226,27 @@ sketchybar	click volume icon	toggle mute
 sketchybar	click calendar	open calendar app
 sketchybar	click claude bell	go to claude notification
 
+# ── television (tv — global) ────────────────────────────────────
+# Note: resizing the list vs preview by pixels is NOT a tv feature.
+# Closest options: toggle_preview (hide) or toggle_layout (flip orientation).
+# preview_size is static — set `preview_size = N` (%) in config or pass --preview-size.
+
+tv	ctrl-o	toggle preview pane (hide/show)
+tv	ctrl-t	toggle layout (landscape ↔ portrait — changes list/preview split)
+tv	ctrl-f	cycle previews (if channel has multiple)
+tv	ctrl-s	cycle sources (if channel has multiple)
+tv	ctrl-r	reload source (re-run the source command)
+tv	ctrl-x	toggle action picker
+
+# ── television · claude-sessions channel ───────────────────────
+
+tv-claude	enter	resume selected session
+tv-claude	ctrl-s	sort by context size (desc) — overrides cycle_sources here
+tv-claude	ctrl-t	sort by last-modified (desc) — overrides toggle_layout here
+tv-claude	ctrl-n	sort by session created date (desc)
+tv-claude	ctrl-p	sort by project name (A–Z)
+tv-claude	(auto)	sort changes from ctrl-x action picker propagate within ~2s via watch
+
 # ── claude code ─────────────────────────────────────────────────
 
 claude-code	shift-f5	push to talk (voice)

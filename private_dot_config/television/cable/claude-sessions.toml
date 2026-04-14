@@ -1,11 +1,23 @@
+# Poll source every 2s so sort changes made via the ctrl-x action picker
+# (which can't chain reload_source) propagate without an explicit reload.
+# NOTE: must be above any [table] header — otherwise TOML parses it as a
+# field of whatever table precedes it.
+watch = 2.0
+
 [metadata]
 name = "claude-sessions"
 description = "Browse and resume Claude Code sessions"
 requirements = ["claude", "python3"]
 
+[ui]
+preview_panel = { size = 40 }
+input_bar = { header = "sort: ^s size  ^t date  ^n created  ^p project   |   ↵ resume  ^r reload" }
+status_bar = { hidden = true }
+help_panel = { hidden = true }
+
 [source]
 command = """python3 -c "
-import json, os, glob, datetime, re
+import json, os, glob, datetime, re, time
 base = os.path.expanduser('~/.claude/projects')
 sessions = []
 def resolve_cwd(name):
@@ -24,6 +36,25 @@ def resolve_cwd(name):
                 return result
         return None
     return try_join(parts, 0) or '/' + '/'.join(parts)
+def fmt_age(secs):
+    if secs < 60: return 'just now'
+    if secs < 3600: return str(int(secs // 60)) + 'm ago'
+    if secs < 86400: return str(int(secs // 3600)) + 'h ago'
+    if secs < 86400 * 30: return str(int(secs // 86400)) + 'd ago'
+    if secs < 86400 * 365: return str(int(secs // (86400 * 30))) + 'mo ago'
+    return str(int(secs // (86400 * 365))) + 'y ago'
+def fmt_tokens(n):
+    if n <= 0: return '-'
+    if n < 1000: return str(n)
+    if n < 1_000_000: return str(round(n / 1000)) + 'k'
+    return '{:.1f}M'.format(n / 1_000_000)
+def parse_ts(s):
+    if not s: return None
+    try:
+        return datetime.datetime.fromisoformat(s.replace('Z', '+00:00')).timestamp()
+    except Exception:
+        return None
+now = time.time()
 for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
     sid = os.path.basename(jsonl).replace('.jsonl', '')
     if sid.startswith('agent-'):
@@ -32,10 +63,17 @@ for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
     project = os.path.basename(os.path.dirname(jsonl))
     cwd = resolve_cwd(project)
     first_msg = ''
+    first_ts = None
+    last_usage = None
     try:
         with open(jsonl) as f:
             for line in f:
-                d = json.loads(line.strip())
+                try:
+                    d = json.loads(line.strip())
+                except Exception:
+                    continue
+                if first_ts is None:
+                    first_ts = parse_ts(d.get('timestamp'))
                 if not first_msg and d.get('type') == 'user':
                     msg = d.get('message', {}).get('content', '')
                     if isinstance(msg, str):
@@ -45,29 +83,76 @@ for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
                             if isinstance(c, dict) and c.get('type') == 'text':
                                 first_msg = c['text']
                                 break
-                if first_msg:
-                    break
+                if d.get('type') == 'assistant':
+                    u = d.get('message', {}).get('usage')
+                    if u:
+                        last_usage = u
     except Exception:
         pass
     label = re.sub(r'<[^>]+>', '', first_msg).strip()[:120].replace('\\n', ' ') or sid
     dt = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M')
+    created_ts = first_ts if first_ts is not None else os.path.getctime(jsonl)
+    age = fmt_age(max(0, now - created_ts))
+    ctx_tokens = 0
+    if last_usage:
+        ctx_tokens = (last_usage.get('input_tokens', 0) or 0) + \\
+                     (last_usage.get('cache_read_input_tokens', 0) or 0) + \\
+                     (last_usage.get('cache_creation_input_tokens', 0) or 0)
+    ctx = fmt_tokens(ctx_tokens)
     short_project = os.path.basename(cwd)
-    sessions.append((mtime, dt + '\\t' + short_project + '\\t' + label + '\\t' + sid + '\\t' + cwd))
-sessions.sort(key=lambda s: s[0], reverse=True)
-for _, line in sessions:
-    print(line)
+    sessions.append((mtime, ctx_tokens, created_ts, short_project.lower(), dt + '\\t' + short_project + '\\t' + age + '\\t' + ctx + '\\t' + label + '\\t' + sid + '\\t' + cwd))
+sort_mode = 'mtime'
+try:
+    with open('/tmp/tv-claude-sort') as f:
+        sort_mode = f.read().strip() or 'mtime'
+except Exception:
+    pass
+if sort_mode == 'size':
+    sessions.sort(key=lambda s: s[1], reverse=True)
+elif sort_mode == 'created':
+    sessions.sort(key=lambda s: s[2], reverse=True)
+elif sort_mode == 'project':
+    sessions.sort(key=lambda s: (s[3], -s[0]))
+else:
+    sessions.sort(key=lambda s: s[0], reverse=True)
+for s in sessions:
+    print(s[-1])
 "
 """
-display = "{split:\t:0} [{split:\t:1}] {split:\t:2}"
-output = "{split:\t:3}\t{split:\t:4}"
+display = "{split:\t:0} [{split:\t:1}] ({split:\t:2} · {split:\t:3}) {split:\t:4}"
+output = "{split:\t:5}\t{split:\t:6}"
 
 [preview]
-command = "python3 ~/.config/television/claude-session-preview.py '{split:\t:3}'"
+command = "python3 ~/.config/television/claude-session-preview.py '{split:\t:5}'"
 
 [keybindings]
 enter = "actions:resume"
+ctrl-s = ["actions:sort_by_size", "reload_source"]
+ctrl-t = ["actions:sort_by_date", "reload_source"]
+ctrl-n = ["actions:sort_by_created", "reload_source"]
+ctrl-p = ["actions:sort_by_project", "reload_source"]
 
 [actions.resume]
 description = "Resume the selected Claude session"
-command = "cd '{split:\t:4}' && claude --resume '{split:\t:3}'"
+command = "cd '{split:\t:6}' && claude --resume '{split:\t:5}'"
 mode = "execute"
+
+[actions.sort_by_size]
+description = "Sort sessions by context size (desc)"
+command = "printf size > /tmp/tv-claude-sort"
+mode = "fork"
+
+[actions.sort_by_date]
+description = "Sort sessions by last-modified (desc)"
+command = "printf mtime > /tmp/tv-claude-sort"
+mode = "fork"
+
+[actions.sort_by_created]
+description = "Sort sessions by created date (desc)"
+command = "printf created > /tmp/tv-claude-sort"
+mode = "fork"
+
+[actions.sort_by_project]
+description = "Sort sessions by project name (A-Z)"
+command = "printf project > /tmp/tv-claude-sort"
+mode = "fork"
