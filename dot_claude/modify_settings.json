@@ -1,0 +1,29 @@
+#!/bin/sh
+# Chezmoi modify_ script for ~/.claude/settings.json.
+#
+# Claude Code owns this file and rewrites it at runtime (model selection, UI
+# toggles, etc.), so we cannot manage it as a regular chezmoi file. Instead,
+# this script reads the current target on stdin and emits the same JSON with
+# our `statusLine` key injected (or overwritten) — all other keys Claude has
+# written are preserved via jq's recursive-merge operator (`*`).
+#
+# Why statusLine lives here and not in settings.local.json: on this install,
+# a statusLine block in settings.local.json is silently ignored. See the
+# EXCEPTION note in CLAUDE.md.
+#
+# This script must be byte-stable for unchanged inputs — otherwise every
+# `chezmoi apply` would show a diff.
+
+set -eu
+
+input="$(cat)"
+if [ -z "$input" ]; then
+  input='{}'
+fi
+
+printf '%s' "$input" | jq '. * {
+  statusLine: {
+    type: "command",
+    command: "~/.claude/statusline/statusline.sh"
+  }
+}'

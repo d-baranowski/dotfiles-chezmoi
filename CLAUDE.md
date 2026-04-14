@@ -53,6 +53,33 @@ private_dot_config/        # ~/.config/
   private_karabiner/       #   Karabiner key remapping (large JSON)
   sketchybar/              #   Menu bar config + custom plugin scripts
 
+dot_claude/                                    # ~/.claude/
+  CLAUDE.md                                  #   Global AI agent instructions
+  settings.local.json                        #   Enforced defaults (vim=on, voice=on)
+  modify_settings.json                       #   Injects statusLine into settings.json on apply
+  hooks/                                     #   Claude Code hook scripts
+  keybindings.json                           #   Vim/keybinding config
+  skills/                                    #   Custom skill definitions
+  statusline/statusline.sh                   #   Custom statusLine renderer (see below)
+
+# NOTE: ~/.claude/settings.json is NOT owned by chezmoi — Claude Code writes to it at
+# runtime (model selection, UI toggles, etc.). Instead, it's *modified* on apply by a
+# chezmoi modify_ script (dot_claude/modify_settings.json) that reads the current file
+# on stdin, merges in our managed keys with jq, and writes the result back. All other
+# keys Claude writes are preserved. This is chezmoi's canonical pattern for files a
+# tool owns but you need to inject config into.
+#
+# Currently the modify_ script only injects `statusLine`, because on this install a
+# statusLine block in settings.local.json is silently ignored (the docs claim local
+# overrides, but empirically it doesn't apply to statusLine). The actual rendering
+# logic lives in the chezmoi-managed script at dot_claude/statusline/statusline.sh;
+# settings.json just points at it. On a fresh machine, `chezmoi apply` sets this up
+# automatically — no hand-editing needed.
+#
+# Do NOT `chezmoi add ~/.claude/settings.json` — that would make chezmoi fully own it
+# and fight with Claude Code's runtime writes. If you need to inject more keys, add
+# them to the jq merge expression in `modify_settings.json`.
+
 private_dot_mcpproxy/                        # ~/.mcpproxy/
   private_mcp_config.json.tmpl               #   MCPProxy config (TEMPLATE - contains secret placeholders)
 

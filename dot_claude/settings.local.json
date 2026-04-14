@@ -1,0 +1,10 @@
+{
+  "vim": {
+    "enabled": true
+  },
+  "voice": {
+    "enabled": true,
+    "mode": "hold",
+    "holdKey": "v"
+  }
+}

@@ -5,6 +5,11 @@
 # Neovim lock file - managed by lazy.nvim, not chezmoi
 .config/nvim/lazy-lock.json
 
+# Claude Code settings — written at runtime by Claude Code (model selection, UI toggles,
+# etc.). We do NOT own this file, but we do need to inject the `statusLine` key on apply,
+# so it's handled via a modify_ script (dot_claude/modify_executable_settings.json) rather
+# than being listed here. Other keys Claude writes are preserved by that script.
+
 # Repo-meta docs — not dotfiles, should not be copied to $HOME
 AGENTS.md
 CLAUDE.md
