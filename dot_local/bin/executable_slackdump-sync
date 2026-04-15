@@ -1,13 +1,28 @@
 #!/usr/bin/env bash
 # slackdump-sync — hourly Slack → Obsidian sync
 #
-# Maintains two SQLite archives (DMs + the #cognite-internal channel) in
-# ~/Library/Application Support/slackdump-sync/, then renders them as
-# markdown into the Obsidian vault. Driven by launchd (see
-# ~/Library/LaunchAgents/com.slackdump.sync.plist).
+# **API discipline (important):**
+#   - Resume-only in the steady state. Never full-archive from this
+#     script — the initial archives were seeded manually and must not be
+#     re-created automatically. If an archive DB is missing, exit loudly.
+#   - DMs archive uses `-refresh` at most once per REFRESH_GATE_SECONDS
+#     (default 4h). Between refreshes: plain cursor-based resume, which
+#     fetches only messages posted since the last run. A state file at
+#     $BASE_DIR/.last-refresh-dms tracks the last refresh time.
+#   - When a refresh discovers a previously-unseen IM or MPIM, we run a
+#     targeted `resume` with a large lookback (-lookback p10y) against
+#     that single channel so we backfill its full history — even if the
+#     DM started long before we first saw it.
+#   - Cognite archive never uses `-refresh` (fixed single channel).
+#   - If Slack returns a rate-limit error, we abort immediately and fire
+#     a persistent red banner via Hammerspoon (ratelimit module). No
+#     further API calls happen on that run; the banner must be dismissed
+#     manually (Escape — only bound while banner is up). This preserves
+#     quota and keeps audit-log patterns from looking like a retrying bot.
 #
-# First invocation on each archive dir creates it via `slackdump archive`;
-# every subsequent run uses `slackdump resume` for incremental fetches.
+# Maintains two SQLite archives (DMs + #cognite-internal) in
+# ~/Library/Application Support/slackdump-sync/, then renders them as
+# markdown. Driven by launchd (com.slackdump.sync.plist, hourly).
 set -euo pipefail
 
 WORKSPACE="helloparallax"
@@ -15,56 +30,166 @@ COGNITE_CHANNEL="C09EAH2KZJ6"
 BASE_DIR="$HOME/Library/Application Support/slackdump-sync"
 DMS_DIR="$BASE_DIR/dms"
 COG_DIR="$BASE_DIR/cognite"
-VAULT_DIR="$HOME/Documents/obsidian/work-notes/work-notes"
+LAST_REFRESH_FILE="$BASE_DIR/.last-refresh-dms"
+REFRESH_GATE_SECONDS=14400   # 4 hours
+NEW_CHAN_LOOKBACK="p10y"     # deep enough to capture full DM history
+
+# Rendered markdown lives OUTSIDE ~/Documents/ to sidestep macOS TCC
+# restrictions on launchd-spawned processes. Vault symlink:
+#   ~/Documents/obsidian/work-notes/work-notes/Slack → ~/SlackSync/Slack
+OUTPUT_DIR="$HOME/SlackSync/Slack"
 CONVERTER="$HOME/.local/bin/slackdump-to-md.py"
 LOG_DIR="$HOME/Library/Logs"
 
-mkdir -p "$BASE_DIR" "$LOG_DIR"
+mkdir -p "$LOG_DIR" "$BASE_DIR"
 
-# sync_archive <dir> <resume-flags...> -- <archive-flags-and-channels...>
-# On first run (no DB yet) passes archive-flags; on resume, passes resume-flags.
-# The two sets differ because `archive` needs -chan-types / channel IDs up front,
-# whereas `resume` re-uses the channel set recorded in the DB.
-sync_archive() {
-  local dir="$1"; shift
-  local resume_args=() archive_args=()
-  local seen_sep=0
-  for arg in "$@"; do
-    if [[ "$arg" == "--" ]]; then seen_sep=1; continue; fi
-    if (( seen_sep )); then archive_args+=("$arg"); else resume_args+=("$arg"); fi
-  done
-  # ${arr[@]+"${arr[@]}"} safely expands to nothing when the array is empty,
-  # which matters under `set -u` (bash errors on "${empty[@]}" otherwise).
-  if [[ -f "$dir/slackdump.sqlite" ]]; then
-    echo "[$(date '+%F %T')] resuming $dir"
-    slackdump resume -workspace "$WORKSPACE" ${resume_args[@]+"${resume_args[@]}"} "$dir"
-  else
-    echo "[$(date '+%F %T')] archiving (first run) $dir — this may take a while"
-    mkdir -p "$dir"
-    slackdump archive -workspace "$WORKSPACE" -o "$dir" ${archive_args[@]+"${archive_args[@]}"}
+# ── Alert helpers ─────────────────────────────────────────────────────
+# Fire a persistent red banner via the Hammerspoon `ratelimit` module.
+# The banner stays on-screen until the user dismisses it with Escape,
+# so failures can't slip past unnoticed when the laptop is in use and
+# the user isn't tailing the launchd log.
+alert_banner() {
+  local msg="$1"
+  if command -v hs >/dev/null 2>&1; then
+    hs -c "ratelimit.show([[⚠️ $msg]])" || true
   fi
+  osascript -e "display notification \"$msg\" with title \"slackdump-sync\" sound name \"Basso\"" 2>/dev/null || true
+  echo "[$(date '+%F %T')] ALERT: $msg" >&2
 }
 
-# DMs + group DMs. -refresh on resume picks up newly-appearing IMs.
-sync_archive "$DMS_DIR" -refresh -- -chan-types=im,mpim
+alert_rate_limited() {
+  local context="$1"
+  alert_banner "SLACK RATE LIMITED — $context. sync stopped. next run at top of hour."
+}
 
-# #cognite-internal only (no -refresh: channel set is fixed)
-sync_archive "$COG_DIR" -- "$COGNITE_CHANNEL"
+# Generic failure trap — fires the banner for ANY non-zero exit that
+# isn't the already-handled rate-limit path (code 99). Catches slackdump
+# errors, Python converter crashes, rsync failures, unexpected 5xx, etc.
+on_exit() {
+  local rc=$?
+  if [[ $rc -ne 0 && $rc -ne 99 ]]; then
+    alert_banner "slackdump-sync FAILED (exit $rc). check ~/Library/Logs/slackdump-sync.log"
+  fi
+}
+trap on_exit EXIT
 
-# Render both archives into a single flat Slack/ folder in the vault.
-# DMs become Slack/<Real Name>.md, cognite becomes Slack/cognite-internal.md.
-# Attachments live in the archive's __uploads/ dir; symlink it into the vault
-# so Obsidian can render images inline without duplicating disk space.
-mkdir -p "$VAULT_DIR/Slack/_attachments"
-ln -sfn "$DMS_DIR/__uploads" "$VAULT_DIR/Slack/_attachments/dms"
-ln -sfn "$COG_DIR/__uploads" "$VAULT_DIR/Slack/_attachments/cognite"
+# run_slackdump <label> <slackdump args...>
+# Runs slackdump, streams output to the launchd log, and scans for
+# rate-limit markers. On match: fires the alert and returns 99 so the
+# caller can short-circuit the rest of the sync.
+run_slackdump() {
+  local label="$1"; shift
+  local out; out=$(mktemp)
+  local rc=0
+  set +e
+  slackdump "$@" 2>&1 | tee "$out"
+  rc=${PIPESTATUS[0]}
+  set -e
+  # Rate-limit detection. slackdump prints these phrasings on 429:
+  #   "slack rate limit exceeded"
+  #   "rate_limited"
+  #   "429 Too Many Requests"
+  if grep -qiE "rate[ _-]?limit[ _-]?(exceeded|ed)|^.*rate_limited|429[ ]+too[ _-]?many" "$out"; then
+    rm -f "$out"
+    alert_rate_limited "$label"
+    return 99
+  fi
+  rm -f "$out"
+  return $rc
+}
 
-# Filter on the converter side — slackdump's `-refresh` on resume can pull
-# extra visible channels into the DB even when the archive was seeded with
-# `-chan-types=im,mpim`. Belt-and-braces: only emit the kinds we want.
-python3 "$CONVERTER" "$DMS_DIR/slackdump.sqlite" "$VAULT_DIR/Slack" "_attachments/dms" \
+# ── DMs refresh cadence ───────────────────────────────────────────────
+# Should this run include -refresh? True if the state file is missing
+# or older than REFRESH_GATE_SECONDS.
+should_refresh() {
+  [[ ! -f "$LAST_REFRESH_FILE" ]] && return 0
+  local last now elapsed
+  last=$(cat "$LAST_REFRESH_FILE" 2>/dev/null || echo 0)
+  now=$(date +%s)
+  elapsed=$((now - last))
+  (( elapsed >= REFRESH_GATE_SECONDS ))
+}
+
+# Snapshot channel IDs currently in an archive DB. Used to diff pre/post
+# refresh to identify newly-discovered channels.
+snapshot_channels() {
+  local db="$1"
+  sqlite3 "$db" "SELECT DISTINCT ID FROM CHANNEL" 2>/dev/null | sort -u
+}
+
+# Is a given channel ID an IM or MPIM (as opposed to public/private channel)?
+# We only want to backfill newly-discovered direct messages, not public
+# channels that refresh might have surfaced unrelated to our intent.
+is_dm_or_mpim() {
+  local db="$1" cid="$2"
+  local kind
+  kind=$(sqlite3 "$db" "
+    SELECT CASE
+      WHEN json_extract(DATA, '\$.is_im') = 1 THEN 'im'
+      WHEN json_extract(DATA, '\$.is_mpim') = 1 THEN 'mpim'
+      ELSE 'other'
+    END
+    FROM CHANNEL WHERE ID = '$cid' ORDER BY CHUNK_ID DESC LIMIT 1;
+  " 2>/dev/null)
+  [[ "$kind" == "im" || "$kind" == "mpim" ]]
+}
+
+# ── Archives ──────────────────────────────────────────────────────────
+# Existence check — refuse to auto-archive.
+for pair in "DMs:$DMS_DIR" "cognite:$COG_DIR"; do
+  label="${pair%%:*}" dir="${pair#*:}"
+  if [[ ! -f "$dir/slackdump.sqlite" ]]; then
+    echo "[$(date '+%F %T')] ERROR: $label archive missing at $dir" >&2
+    echo "  Refusing to auto-archive (would re-fetch full history from Slack)." >&2
+    echo "  To re-seed manually: slackdump archive -workspace $WORKSPACE -o $dir ..." >&2
+    exit 1
+  fi
+done
+
+# DMs: resume, with -refresh on a 4h cadence
+if should_refresh; then
+  echo "[$(date '+%F %T')] DMs: refresh cycle (last was >$((REFRESH_GATE_SECONDS/3600))h ago)"
+  # Capture channel set before refresh so we can diff afterward.
+  pre_channels=$(snapshot_channels "$DMS_DIR/slackdump.sqlite")
+  run_slackdump "dms-refresh" resume -workspace "$WORKSPACE" -refresh "$DMS_DIR" \
+    || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
+  # Record successful refresh.
+  date +%s > "$LAST_REFRESH_FILE"
+  # Diff — any new IM/MPIM gets a full-history backfill.
+  post_channels=$(snapshot_channels "$DMS_DIR/slackdump.sqlite")
+  new_channels=$(comm -13 <(echo "$pre_channels") <(echo "$post_channels"))
+  if [[ -n "$new_channels" ]]; then
+    echo "[$(date '+%F %T')] Detected new channels; filtering for IM/MPIM..."
+    while IFS= read -r cid; do
+      [[ -z "$cid" ]] && continue
+      if is_dm_or_mpim "$DMS_DIR/slackdump.sqlite" "$cid"; then
+        echo "[$(date '+%F %T')] Backfilling full history for new DM: $cid"
+        run_slackdump "dms-backfill-$cid" resume -workspace "$WORKSPACE" \
+          -lookback "$NEW_CHAN_LOOKBACK" "$DMS_DIR" "$cid" \
+          || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
+      else
+        echo "[$(date '+%F %T')] Skipping non-DM channel from refresh: $cid (will be filtered at render time)"
+      fi
+    done <<< "$new_channels"
+  fi
+else
+  echo "[$(date '+%F %T')] DMs: plain resume (next refresh in $((REFRESH_GATE_SECONDS - $(date +%s) + $(cat "$LAST_REFRESH_FILE"))) seconds)"
+  run_slackdump "dms-resume" resume -workspace "$WORKSPACE" "$DMS_DIR" \
+    || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
+fi
+
+# Cognite: plain resume, never refreshed.
+run_slackdump "cognite-resume" resume -workspace "$WORKSPACE" "$COG_DIR" \
+  || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
+
+# ── Render ────────────────────────────────────────────────────────────
+mkdir -p "$OUTPUT_DIR/_attachments"
+ln -sfn "$DMS_DIR/__uploads" "$OUTPUT_DIR/_attachments/dms"
+ln -sfn "$COG_DIR/__uploads" "$OUTPUT_DIR/_attachments/cognite"
+
+python3 "$CONVERTER" "$DMS_DIR/slackdump.sqlite" "$OUTPUT_DIR" "_attachments/dms" \
     --types=im,mpim
-python3 "$CONVERTER" "$COG_DIR/slackdump.sqlite" "$VAULT_DIR/Slack" "_attachments/cognite" \
+python3 "$CONVERTER" "$COG_DIR/slackdump.sqlite" "$OUTPUT_DIR" "_attachments/cognite" \
     --only="$COGNITE_CHANNEL"
 
 echo "[$(date '+%F %T')] done"

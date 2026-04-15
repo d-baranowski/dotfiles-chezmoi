@@ -14,3 +14,7 @@
 AGENTS.md
 CLAUDE.md
 README.md
+
+# Machine-local Claude Code skills — not synced across machines.
+# Add any skill here that should live only on this host.
+.claude/skills/keybind

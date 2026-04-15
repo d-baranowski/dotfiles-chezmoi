@@ -97,6 +97,7 @@ leader	leader m n	clear notifications
 leader	leader m b	go to claude notification
 leader	leader m k	force quit dialog
 leader	leader m /	search keybindings
+leader	leader k	window picker across all aerospace workspaces
 leader	leader c h	clipboard history picker
 leader	leader c s	clipboard search
 leader	leader c r	show clipboard registers
@@ -258,3 +259,8 @@ google-chrome	ctrl-shift-a	search open tabs (tab search)
 google-chrome	ctrl-l	focus url bar (omnibox)
 google-chrome	ctrl-shift-j	next tab (space held = shift: ctrl-space-j)
 google-chrome	ctrl-shift-k	previous tab (space held = shift: ctrl-space-k)
+
+# ── finder / file picker (any macOS open/save dialog too) ──────
+
+finder	cmd-shift-g	"go to folder" — type/paste absolute path, handles hidden dirs (~/Library, ~/.local)
+finder	cmd-shift-.	toggle show/hide hidden files & folders

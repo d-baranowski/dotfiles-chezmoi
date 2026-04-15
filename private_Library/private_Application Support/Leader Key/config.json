@@ -578,6 +578,13 @@
       "type" : "group"
     },
     {
+      "iconPath" : "rectangle.stack",
+      "key" : "k",
+      "label" : "workspace window picker",
+      "type" : "command",
+      "value" : "/opt/homebrew/bin/hs -c 'workspaces.showWindowPicker()'"
+    },
+    {
       "actions" : [
         {
           "key" : "r",

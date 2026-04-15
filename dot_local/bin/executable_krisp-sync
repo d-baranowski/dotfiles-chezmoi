@@ -1,0 +1,652 @@
+#!/usr/bin/env python3
+"""Krisp → Obsidian meeting transcript sync.
+
+Runs hourly via launchd. For each meeting that has appeared since the
+last sync (or within the bootstrap window on first run), writes a
+markdown file to ~/KrispSync/Meetings/ — which is symlinked into the
+Obsidian vault at ~/Documents/obsidian/work-notes/work-notes/Meetings.
+
+Flags:
+  --all         Ignore saved state and pull every meeting Krisp has
+                for you, back to the beginning of time. Intended as a
+                one-time backfill; normal launchd runs should NOT use
+                this flag. Paginates through search_meetings in
+                batches of 50.
+  --dry-run     Do everything except write .md files (useful for
+                inspecting behaviour against a real account).
+
+Auth: OAuth 2.0 + PKCE + confidential client (DCR). The `krisp-auth`
+bootstrap handles the browser-driven initial authorization. This
+script uses the persisted refresh_token to mint fresh access tokens
+each run.
+
+Transport: MCP (Model Context Protocol) over Streamable HTTP at
+https://mcp.krisp.ai/mcp. JSON-RPC 2.0 with SSE responses. Krisp's
+MCP server is stateless — no session IDs — so each run's flow is:
+
+    POST initialize       → server info + SSE reply
+    POST notifications/initialized  → 202
+    POST tools/call name=search_meetings  → list of candidate meetings
+    POST tools/call name=get_multiple_documents  → full transcripts
+                                                   (batched in 10s)
+
+Tool schemas were probed once from tools/list and are hard-coded here.
+
+API discipline:
+  - Hourly launchd cadence (meetings don't happen often enough to care
+    more often); RunAtLoad=false so reload/kickstart don't hit the API.
+  - On 429 / rate-limit: abort immediately, fire the Hammerspoon red
+    banner (same `ratelimit` module used by slackdump-sync), exit 99.
+  - State file tracks seen_ids so we never re-fetch completed meetings.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+# ── Config ─────────────────────────────────────────────────────────────
+
+STATE_DIR = Path.home() / "Library" / "Application Support" / "krisp-sync"
+TOKEN_FILE = STATE_DIR / "token.json"
+STATE_FILE = STATE_DIR / "state.json"
+# Staging dir lives outside ~/Documents/ so launchd-spawned runs don't
+# need macOS Full Disk Access. After rendering, contents are rsynced
+# into the vault in one step; rsync --update avoids clobbering and
+# skips unchanged files (keeps Obsidian watcher / vault sync quiet).
+OUTPUT_DIR = Path.home() / "KrispSync" / "Meetings"
+VAULT_DIR = Path.home() / "Documents" / "obsidian" / "work-notes" / "work-notes" / "Meetings"
+LOG_PREFIX = "[krisp-sync]"
+
+MCP_URL = "https://mcp.krisp.ai/mcp"
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) "
+    "AppleWebKit/605.1.15 krisp-sync/0.1"
+)
+PROTOCOL_VERSION = "2025-03-26"
+
+# First-run backfill: look back this far when there's no state yet.
+BOOTSTRAP_LOOKBACK_DAYS = 30
+
+# Minimum lookback on every hourly run. search_meetings filters by meeting
+# start date, but Krisp may take hours to process a transcript after a
+# meeting ends (observed: a meeting at 16:00 UTC wasn't in search results
+# until well after 17:13 UTC). If our `after` cursor moves past a meeting
+# start date before Krisp indexes it, we miss it forever. A 24h window
+# comfortably covers any realistic processing delay. seen_ids dedupes
+# the overlap, so the only extra cost is a slightly larger search result
+# payload — still a single API call.
+MIN_LOOKBACK_HOURS = 24
+
+# Batch size for get_multiple_documents (schema allows up to 10).
+# Each document in the response is a full transcript as a markdown
+# string, which can be large — 3 is a gentler batch size for memory +
+# response time, and keeps individual API hits smaller.
+DOC_BATCH_SIZE = 3
+
+# Max meetings per search call (schema max=50).
+SEARCH_LIMIT = 50
+
+
+# ── Utilities ──────────────────────────────────────────────────────────
+
+def log(msg: str) -> None:
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{ts} {LOG_PREFIX} {msg}", flush=True)
+
+
+def fire_banner(msg: str) -> None:
+    """Trigger the Hammerspoon persistent red banner (shared module;
+    dismissed via Escape). Always accompanied by an OS notification as a
+    fallback in case the hs IPC is unavailable. Safe to call from any
+    failure path — swallows its own errors.
+    """
+    # Keep message short enough for the banner to render readably.
+    short = msg if len(msg) < 220 else msg[:217] + "…"
+    try:
+        subprocess.run(
+            ["hs", "-c", f"ratelimit.show([[⚠️ {short}]])"],
+            timeout=5, check=False,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError):
+        pass
+    try:
+        subprocess.run(
+            ["osascript", "-e",
+             f'display notification "{short}" with title "krisp-sync" sound name "Basso"'],
+            timeout=5, check=False,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError):
+        pass
+
+
+def die(msg: str, code: int = 1) -> None:
+    log(f"FATAL: {msg}")
+    fire_banner(f"krisp-sync FAILED: {msg}")
+    sys.exit(code)
+
+
+def fire_rate_limit_banner(context: str) -> None:
+    """Rate-limit-specific wrapper; kept for readability at call sites."""
+    log(f"RATE LIMITED: {context} — aborted")
+    fire_banner(f"KRISP RATE LIMITED — {context}. sync stopped.")
+
+
+def slugify(s: str, max_len: int = 60) -> str:
+    s = re.sub(r"[^\w\s-]", "", s, flags=re.UNICODE).strip().lower()
+    s = re.sub(r"[-\s]+", "-", s)
+    return (s or "untitled")[:max_len].rstrip("-")
+
+
+# ── OAuth ──────────────────────────────────────────────────────────────
+
+def load_creds() -> dict:
+    if not TOKEN_FILE.exists():
+        die(f"no credentials at {TOKEN_FILE} — run `krisp-auth` first")
+    return json.loads(TOKEN_FILE.read_text())
+
+
+def refresh_access_token(creds: dict) -> tuple[str, dict]:
+    """Exchange the refresh_token for a new access_token. Persist rotation."""
+    body = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": creds["refresh_token"],
+        "client_id": creds["client_id"],
+        "client_secret": creds["client_secret"],
+    }).encode()
+    req = urllib.request.Request(
+        creds["token_endpoint"], data=body,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
+            "User-Agent": USER_AGENT,
+        }, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            tokens = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        payload = e.read().decode("utf-8", errors="replace")
+        if e.code == 429:
+            fire_rate_limit_banner("token refresh")
+            sys.exit(99)
+        die(f"token refresh failed (HTTP {e.code}): {payload}")
+    new_refresh = tokens.get("refresh_token")
+    if new_refresh and new_refresh != creds["refresh_token"]:
+        creds["refresh_token"] = new_refresh
+        TOKEN_FILE.write_text(json.dumps(creds, indent=2))
+        os.chmod(TOKEN_FILE, 0o600)
+        log("refresh token rotated")
+    return tokens["access_token"], creds
+
+
+# ── MCP client ─────────────────────────────────────────────────────────
+
+class MCPClient:
+    def __init__(self, url: str, access_token: str):
+        self.url = url
+        self.headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+            "Authorization": f"Bearer {access_token}",
+            "User-Agent": USER_AGENT,
+        }
+        self._rpc_id = 0
+
+    def _next_id(self) -> int:
+        self._rpc_id += 1
+        return self._rpc_id
+
+    def _post(self, payload: dict) -> dict | None:
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(self.url, data=data, headers=self.headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                if r.status == 202:
+                    return None  # notification, no body
+                ct = r.headers.get("Content-Type", "")
+                raw = r.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                fire_rate_limit_banner(f"MCP {payload.get('method', '?')}")
+                sys.exit(99)
+            payload_s = e.read().decode("utf-8", errors="replace")
+            die(f"MCP {payload.get('method', '?')} failed HTTP {e.code}: {payload_s}")
+        # Krisp returns text/event-stream even for single-response calls.
+        if ct.startswith("text/event-stream") or "\ndata: " in raw or raw.startswith("data: "):
+            for line in raw.splitlines():
+                if line.startswith("data: "):
+                    return json.loads(line[6:])
+        return json.loads(raw)
+
+    def initialize(self) -> dict:
+        resp = self._post({
+            "jsonrpc": "2.0", "id": self._next_id(), "method": "initialize",
+            "params": {
+                "protocolVersion": PROTOCOL_VERSION,
+                "capabilities": {},
+                "clientInfo": {"name": "krisp-sync", "version": "0.1"},
+            },
+        })
+        if resp is None or "error" in resp:
+            die(f"initialize failed: {resp}")
+        # Per MCP spec, client must send initialized notification.
+        self._post({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        return resp["result"]
+
+    def call_tool(self, name: str, arguments: dict) -> dict:
+        resp = self._post({
+            "jsonrpc": "2.0", "id": self._next_id(), "method": "tools/call",
+            "params": {"name": name, "arguments": arguments},
+        })
+        if resp is None:
+            die(f"tools/call {name} returned no body")
+        if "error" in resp:
+            die(f"tools/call {name} error: {json.dumps(resp['error'])}")
+        result = resp.get("result") or {}
+        if result.get("isError"):
+            die(f"tools/call {name} isError: {json.dumps(result)}")
+        return result
+
+
+def extract_structured(tool_result: dict) -> object:
+    """MCP tools return {content: [{type, text}], structuredContent?: ...}.
+
+    Krisp puts JSON in either `structuredContent` (as an object) or in
+    `content[0].text` as a JSON-encoded string. Handle both.
+    """
+    if "structuredContent" in tool_result:
+        sc = tool_result["structuredContent"]
+        if isinstance(sc, dict) and set(sc.keys()) == {"result"}:
+            return sc["result"]
+        return sc
+    content = tool_result.get("content") or []
+    for block in content:
+        if block.get("type") == "text":
+            text = block.get("text", "")
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                return text
+    return None
+
+
+# ── State ──────────────────────────────────────────────────────────────
+
+def load_state() -> dict:
+    if STATE_FILE.exists():
+        return json.loads(STATE_FILE.read_text())
+    return {"seen_ids": [], "last_sync": None}
+
+
+def save_state(state: dict) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+# ── Rendering ──────────────────────────────────────────────────────────
+
+def parse_date(s: str) -> datetime | None:
+    if not s:
+        return None
+    # Try common ISO shapes.
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d",
+    ):
+        try:
+            dt = datetime.strptime(s, fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except ValueError:
+            continue
+    try:
+        # fromisoformat handles the widest range in 3.11+
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        return None
+
+
+def filename_for(meta: dict, doc_id: str) -> str:
+    """Build DD-MM-YYYY-HH-MM-<slug>.md filename from search metadata.
+
+    Document responses don't include date/title — only {id, document} —
+    so we derive these from the search_meetings entry.
+    """
+    dt = parse_date(meta.get("date", "")) if meta else None
+    dt = dt or datetime.now(timezone.utc)
+    dt_local = dt.astimezone()
+    stem = dt_local.strftime("%d-%m-%Y-%H-%M")
+    title = slugify((meta or {}).get("name") or f"meeting-{doc_id[:8]}")
+    return f"{stem}-{title}.md"
+
+
+def render_markdown(doc: dict, meta: dict | None) -> str:
+    """Render a meeting as markdown.
+
+    Krisp's `get_multiple_documents` returns the meeting as a
+    pre-rendered markdown string in the `document` field (title,
+    recording link, transcript sections, all formatted). We prepend
+    an Obsidian-friendly YAML frontmatter block with metadata from
+    the search_meetings entry (which has structured date/attendees/
+    url that aren't easily extractable from the markdown body).
+    """
+    body = doc.get("document") or ""
+    doc_id = doc.get("id") or doc.get("meeting_id") or ""
+
+    frontmatter = ["---", f"krisp_id: {doc_id}"]
+    if meta:
+        dt = parse_date(meta.get("date", ""))
+        if dt:
+            frontmatter.append(f"date: {dt.astimezone().strftime('%Y-%m-%d %H:%M:%S %z')}")
+        if meta.get("url"):
+            frontmatter.append(f"krisp_url: {meta['url']}")
+        if meta.get("attendees"):
+            frontmatter.append(f"attendees: [{', '.join(repr(a) for a in meta['attendees'])}]")
+        if meta.get("speakers"):
+            frontmatter.append(f"speakers: [{', '.join(repr(s) for s in meta['speakers'])}]")
+        if meta.get("is_recurring"):
+            frontmatter.append("is_recurring: true")
+    frontmatter.append("source: krisp")
+    frontmatter.append("---")
+    frontmatter.append("")
+
+    return "\n".join(frontmatter) + body.strip() + "\n"
+
+
+# ── Main ───────────────────────────────────────────────────────────────
+
+def search_all_meetings(mcp: "MCPClient", after_iso: str) -> list[dict]:
+    """Paginate through search_meetings until exhausted. Used for --all."""
+    all_meetings: list[dict] = []
+    offset = 0
+    while True:
+        result = mcp.call_tool("search_meetings", {
+            "after": after_iso,
+            "limit": SEARCH_LIMIT,
+            "offset": offset,
+            "fields": ["name", "date", "url", "attendees", "speakers", "transcript"],
+        })
+        data = extract_structured(result)
+        if isinstance(data, dict):
+            page = (data.get("meetings") or data.get("results")
+                    or data.get("items") or [])
+        elif isinstance(data, list):
+            page = data
+        else:
+            log(f"unexpected search response: {type(data).__name__}")
+            break
+        if not page:
+            break
+        all_meetings.extend(page)
+        log(f"  page offset={offset} returned {len(page)} meetings "
+            f"(total so far: {len(all_meetings)})")
+        if len(page) < SEARCH_LIMIT:
+            break
+        offset += SEARCH_LIMIT
+    return all_meetings
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Sync Krisp meeting transcripts to Obsidian.",
+    )
+    parser.add_argument(
+        "--all", action="store_true",
+        help="Backfill from the beginning of time, paginating through all "
+             "meetings. Ignores saved last_sync. One-time use.",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Fetch and render in memory but don't write .md files or "
+             "update state.",
+    )
+    parser.add_argument(
+        "--force", action="store_true",
+        help="Allow rsync to overwrite existing vault files with newer "
+             "staging versions. DANGER: clobbers any edits you've made "
+             "to vault meeting notes. Default behaviour is "
+             "write-once-per-filename (--ignore-existing).",
+    )
+    args = parser.parse_args()
+
+    flags = []
+    if args.all: flags.append("--all")
+    if args.dry_run: flags.append("--dry-run")
+    if args.force: flags.append("--force")
+    log("starting" + (f" ({' '.join(flags)})" if flags else ""))
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    creds = load_creds()
+    access_token, creds = refresh_access_token(creds)
+
+    mcp = MCPClient(creds["resource"], access_token)
+    server_info = mcp.initialize()
+    log(f"MCP connected: {server_info.get('serverInfo', {}).get('name')} "
+        f"{server_info.get('serverInfo', {}).get('version')}")
+
+    state = load_state()
+    seen = set() if args.all else set(state.get("seen_ids") or [])
+    if args.all:
+        # Year 2000 is older than any Krisp account on Earth.
+        after_dt = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        log("--all: ignoring saved state, paginating from year 2000")
+    elif state.get("last_sync"):
+        last_sync_dt = parse_date(state["last_sync"])
+        min_dt = datetime.now(timezone.utc) - timedelta(hours=MIN_LOOKBACK_HOURS)
+        # Use the EARLIER of last_sync and the min-lookback cursor, so we
+        # always scan at least MIN_LOOKBACK_HOURS back. Catches meetings
+        # that Krisp indexed late (a real thing — transcripts can take
+        # 10–30 min to process after a meeting ends, and our old logic
+        # would miss them if the cursor had already advanced past the
+        # meeting's start time).
+        after_dt = min(last_sync_dt, min_dt) if last_sync_dt else min_dt
+    else:
+        after_dt = datetime.now(timezone.utc) - timedelta(days=BOOTSTRAP_LOOKBACK_DAYS)
+        log(f"no prior state — bootstrap window: {after_dt.date()}")
+    after_iso = after_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Step 1: search for candidate meetings.
+    if args.all:
+        meetings = search_all_meetings(mcp, after_iso)
+    else:
+        search_result = mcp.call_tool("search_meetings", {
+            "after": after_iso,
+            "limit": SEARCH_LIMIT,
+            "fields": ["name", "date", "url", "attendees", "speakers", "transcript"],
+        })
+        search_data = extract_structured(search_result)
+        if isinstance(search_data, dict):
+            meetings = (search_data.get("meetings") or search_data.get("results")
+                        or search_data.get("items") or [])
+        elif isinstance(search_data, list):
+            meetings = search_data
+        else:
+            log(f"unexpected search response: {type(search_data).__name__}")
+            meetings = []
+    log(f"search_meetings returned {len(meetings)} meetings after {after_iso}")
+    if meetings and (os.environ.get("KRISP_DEBUG") or not seen):
+        # On first run (or debug), dump the first meeting's full JSON so
+        # we can see what Krisp's search actually returns (transcript
+        # status values, field names, etc.) without extra API calls.
+        log("--- first meeting shape (diagnostic) ---")
+        log(json.dumps(meetings[0], indent=2, default=str)[:2000])
+        log("--- end diagnostic ---")
+
+    # Statuses we know mean "Krisp failed or isn't going to process this":
+    SKIP_STATUSES = {"error", "failed", "pending", "processing", "queued"}
+
+    # Step 2: pick up full content for any meetings we haven't rendered.
+    # Strategy: fetch everything that's not in an obvious "not-ready" state.
+    # `uploaded` is Krisp's "audio received" marker and can coexist with
+    # fully-processed meeting_notes — so we don't skip on that alone.
+    new_meetings = []
+    for m in meetings:
+        mid = m.get("meeting_id") or m.get("id")
+        if not mid or mid in seen:
+            continue
+        ts = m.get("transcript") or {}
+        ts_status = (ts.get("status") if isinstance(ts, dict) else "") or ""
+        if ts_status.lower() in SKIP_STATUSES:
+            log(f"  skipping {mid[:8]}… transcript status={ts_status}")
+            continue
+        new_meetings.append(mid)
+
+    if not new_meetings:
+        log("no new meetings to fetch")
+    else:
+        log(f"fetching {len(new_meetings)} full transcripts in batches of {DOC_BATCH_SIZE}")
+
+    # Build meeting_id → search-result lookup so the renderer can pull
+    # date, title, attendees, etc. from the metadata response (those
+    # fields aren't present in get_multiple_documents, which returns
+    # just {id, document}).
+    meta_by_id = {
+        (m.get("meeting_id") or m.get("id")): m
+        for m in meetings
+        if (m.get("meeting_id") or m.get("id"))
+    }
+
+    # Step 3: batch-fetch full documents and render each.
+    rendered = 0
+    first_doc_logged = False
+    for i in range(0, len(new_meetings), DOC_BATCH_SIZE):
+        batch = new_meetings[i:i + DOC_BATCH_SIZE]
+        log(f"  fetching batch {i // DOC_BATCH_SIZE + 1}/"
+            f"{(len(new_meetings) + DOC_BATCH_SIZE - 1) // DOC_BATCH_SIZE} "
+            f"({len(batch)} meetings)")
+        doc_result = mcp.call_tool("get_multiple_documents", {"ids": batch})
+        docs_data = extract_structured(doc_result)
+        if isinstance(docs_data, dict):
+            docs = (docs_data.get("documents") or docs_data.get("meetings")
+                    or docs_data.get("results") or [docs_data])
+        elif isinstance(docs_data, list):
+            docs = docs_data
+        else:
+            log(f"unexpected get_multiple_documents response: {type(docs_data).__name__}")
+            continue
+        if not first_doc_logged and docs and (os.environ.get("KRISP_DEBUG") or not seen):
+            log("--- first document shape (diagnostic) ---")
+            log(json.dumps({k: (v[:200] + "…[truncated]" if isinstance(v, str) and len(v) > 200 else v)
+                            for k, v in docs[0].items()}, indent=2, default=str)[:1200])
+            log("--- end diagnostic ---")
+            first_doc_logged = True
+        for doc in docs:
+            mid = doc.get("id") or doc.get("meeting_id") or doc.get("document_id")
+            if not mid:
+                log(f"doc missing id — skipping: {json.dumps(doc)[:200]}")
+                continue
+            meta = meta_by_id.get(mid)
+            fname = filename_for(meta, mid)
+            out_path = OUTPUT_DIR / fname
+            body = render_markdown(doc, meta)
+            if args.dry_run:
+                log(f"  [dry-run] would write {fname} ({len(body)} bytes)")
+                seen.add(mid)
+                continue
+            # Content-equality gate — skip rewrite if identical.
+            if out_path.exists() and out_path.read_text(encoding="utf-8") == body:
+                seen.add(mid)
+                continue
+            out_path.write_text(body, encoding="utf-8")
+            log(f"wrote {fname}")
+            seen.add(mid)
+            rendered += 1
+
+    # Update state. Skip in --dry-run.
+    if not args.dry_run:
+        state["last_sync"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        # Keep only the most recent N seen_ids so the file stays bounded.
+        state["seen_ids"] = list(seen)[-5000:]
+        save_state(state)
+
+    # Publish: rsync staging → vault.
+    #
+    # --ignore-existing is the key flag: rsync copies a file to the vault
+    # ONLY if it doesn't already exist there. Any file the user has
+    # touched (or even just let sit) is never overwritten by this sync.
+    # Krisp reprocessing a transcript produces a new staging file, but
+    # the vault keeps the original.
+    #
+    # If the user wants a refreshed copy of a specific meeting, they
+    # delete the vault file — the next sync will copy the staging file
+    # back in. --force bypasses this protection for bulk re-publishes.
+    #
+    # Trailing slashes are load-bearing: "dir/" means "copy contents",
+    # without the slash it'd mean "copy the dir itself".
+    if not args.dry_run:
+        VAULT_DIR.mkdir(parents=True, exist_ok=True)
+        rsync_flags = ["-a", "--itemize-changes"]
+        if args.force:
+            rsync_flags.append("--update")  # overwrite older vault files
+            log("  --force: rsync --update (will overwrite older vault files)")
+        else:
+            rsync_flags.append("--ignore-existing")
+        rsync_rc = subprocess.run(
+            ["rsync", *rsync_flags, f"{OUTPUT_DIR}/", f"{VAULT_DIR}/"],
+            capture_output=True, text=True, timeout=120,
+        )
+        if rsync_rc.returncode != 0:
+            log(f"rsync failed ({rsync_rc.returncode}): {rsync_rc.stderr.strip()}")
+        else:
+            # --itemize-changes output uses an 11-char flag column:
+            #   >f...........  regular file transfer
+            #   <f...........  (incoming; we don't expect this direction)
+            #   cd...........  directory created
+            #   .d..t........  directory mtime update only (NOT a file transfer)
+            # Count only actual file transfers (first char '>' or '<').
+            file_lines = [
+                l for l in rsync_rc.stdout.splitlines()
+                if l[:1] in ("<", ">")
+            ]
+            log(f"rsync → {VAULT_DIR}: {len(file_lines)} new file(s) copied")
+            for line in file_lines[:20]:
+                log(f"  {line}")
+            # Clear staging after successful publish. Staging is a
+            # transient buffer — only files rendered THIS run. Without
+            # this step, renamed/deleted vault files would get
+            # re-created from stale staging copies on every future run.
+            for stale in OUTPUT_DIR.glob("*.md"):
+                try:
+                    stale.unlink()
+                except OSError as e:
+                    log(f"  warning: couldn't unlink {stale.name}: {e}")
+
+    log(f"done — rendered={rendered} total_seen={len(seen)}")
+    return 0
+
+
+if __name__ == "__main__":
+    # Any uncaught exception — network hiccups, JSON parse errors, MCP
+    # protocol surprises, etc. — fires the persistent red banner before
+    # exiting, so silent failures can't accumulate unnoticed across
+    # launchd runs.
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise  # die() and rate-limit paths already fired their banners
+    except KeyboardInterrupt:
+        log("interrupted")
+        sys.exit(130)
+    except Exception as _exc:
+        import traceback
+        log(f"UNCAUGHT {type(_exc).__name__}: {_exc}")
+        log(traceback.format_exc())
+        fire_banner(f"krisp-sync CRASHED: {type(_exc).__name__}: {_exc}")
+        sys.exit(1)

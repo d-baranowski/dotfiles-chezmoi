@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+"""Krisp MCP OAuth bootstrap — run once to authorize this machine.
+
+Performs the OAuth 2.0 authorization-code-with-PKCE flow against Krisp's
+MCP server (https://mcp.krisp.ai/mcp), opens your browser to log in /
+consent, and persists the resulting refresh token so `krisp-sync` can
+use it unattended forever.
+
+Flow:
+  1. Discover the authorization server via the MCP resource's
+     `.well-known/oauth-protected-resource` document.
+  2. Dynamically register this machine as an OAuth client.
+  3. Start a tiny loopback HTTP server on 127.0.0.1:<random> to catch
+     the redirect.
+  4. Open the browser to the authorization endpoint (PKCE S256).
+  5. Exchange the returned code for access + refresh tokens.
+  6. Write {refresh_token, client_id, token_endpoint, resource} to
+     ~/Library/Application Support/krisp-sync/token.json (0600).
+
+stdlib-only (urllib, http.server, hashlib, secrets, webbrowser). No pip
+install required.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import http.server
+import json
+import os
+import secrets
+import socket
+import sys
+import threading
+import urllib.parse
+import urllib.request
+import webbrowser
+from pathlib import Path
+
+# MCP server endpoint (where JSON-RPC traffic goes) vs. its origin (where
+# RFC 9728 discovery metadata lives). The .well-known paths are always at
+# the origin, not under the resource's path.
+MCP_RESOURCE = "https://mcp.krisp.ai/mcp"
+MCP_ORIGIN = "https://mcp.krisp.ai"
+STATE_DIR = Path.home() / "Library" / "Application Support" / "krisp-sync"
+TOKEN_FILE = STATE_DIR / "token.json"
+
+CLIENT_NAME = "krisp-sync (personal, launchd-driven)"
+
+# Krisp is fronted by Cloudflare bot protection; Python's default
+# "Python-urllib/X.Y" User-Agent gets a 403 error-1010. A browser-ish
+# string passes through fine.
+USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) "
+    "AppleWebKit/605.1.15 krisp-sync/0.1"
+)
+
+
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def http_json(url: str, method: str = "GET", body: dict | None = None,
+              headers: dict | None = None) -> tuple[int, dict, dict]:
+    """Small wrapper around urllib. Returns (status, response_json, response_headers)."""
+    data = None
+    hdrs = {"Accept": "application/json", "User-Agent": USER_AGENT}
+    if body is not None:
+        if headers and headers.get("Content-Type", "").startswith("application/x-www-form-urlencoded"):
+            data = urllib.parse.urlencode(body).encode()
+        else:
+            data = json.dumps(body).encode()
+            hdrs["Content-Type"] = "application/json"
+    if headers:
+        hdrs.update(headers)
+    req = urllib.request.Request(url, data=data, headers=hdrs, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = resp.read()
+            body_json = json.loads(payload) if payload else {}
+            return resp.status, body_json, dict(resp.headers)
+    except urllib.error.HTTPError as e:
+        payload = e.read()
+        try:
+            body_json = json.loads(payload)
+        except json.JSONDecodeError:
+            body_json = {"_raw": payload.decode("utf-8", errors="replace")}
+        return e.code, body_json, dict(e.headers or {})
+
+
+def discover() -> tuple[str, dict, list[str]]:
+    """Discover AS metadata + supported scopes.
+
+    Returns (as_base, as_metadata, pr_scopes). The protected-resource
+    document lives at ORIGIN/.well-known/oauth-protected-resource, not
+    under the resource path — that's RFC 9728 and what Krisp actually
+    serves.
+    """
+    pr_url = f"{MCP_ORIGIN}/.well-known/oauth-protected-resource"
+    print(f"  ▸ fetching {pr_url}")
+    status, data, _ = http_json(pr_url)
+    if status != 200:
+        die(f"protected-resource discovery failed: HTTP {status}\n{json.dumps(data, indent=2)}")
+    auth_servers = data.get("authorization_servers") or []
+    pr_scopes = data.get("scopes_supported") or []
+    if not auth_servers:
+        die(f"no authorization_servers in PR metadata:\n{json.dumps(data, indent=2)}")
+    as_base = auth_servers[0]
+    as_meta_url = f"{as_base.rstrip('/')}/.well-known/oauth-authorization-server"
+    print(f"  ▸ fetching {as_meta_url}")
+    status, meta, _ = http_json(as_meta_url)
+    if status != 200:
+        die(f"AS metadata discovery failed: HTTP {status}\n{json.dumps(meta, indent=2)}")
+    return as_base, meta, pr_scopes
+
+
+def register(registration_endpoint: str, redirect_uri: str,
+             requested_scopes: list[str]) -> dict:
+    """Dynamic Client Registration (RFC 7591).
+
+    Krisp's AS only supports confidential-client auth methods
+    (client_secret_basic, client_secret_post) — not "none" — so DCR
+    here will issue a client_secret which we must persist and send on
+    every token-endpoint call.
+    """
+    body = {
+        "client_name": CLIENT_NAME,
+        "redirect_uris": [redirect_uri],
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "client_secret_post",
+        "application_type": "native",
+        "scope": " ".join(requested_scopes) if requested_scopes else None,
+    }
+    body = {k: v for k, v in body.items() if v is not None}
+    print(f"  ▸ registering client at {registration_endpoint}")
+    status, data, _ = http_json(registration_endpoint, method="POST", body=body)
+    if status not in (200, 201):
+        die(f"DCR failed: HTTP {status}\n{json.dumps(data, indent=2)}")
+    print(f"  ▸ got client_id: {data.get('client_id')}")
+    if not data.get("client_secret"):
+        die(f"DCR response missing client_secret — needed for confidential client auth:\n"
+            f"{json.dumps(data, indent=2)}")
+    return data
+
+
+class _CallbackHandler(http.server.BaseHTTPRequestHandler):
+    result: dict | None = None
+
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path != "/callback":
+            self.send_response(404)
+            self.end_headers()
+            return
+        params = dict(urllib.parse.parse_qsl(parsed.query))
+        _CallbackHandler.result = params
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        body = (
+            "<html><body style='font-family:system-ui;padding:3em;text-align:center;'>"
+            "<h1 style='color:#2a7'>✓ Authorization captured</h1>"
+            "<p>You can close this tab and return to the terminal.</p>"
+            "</body></html>"
+        )
+        self.wfile.write(body.encode())
+
+    def log_message(self, *args, **kwargs):
+        pass  # quiet
+
+
+def run_loopback() -> tuple[str, http.server.HTTPServer, threading.Thread]:
+    """Bind 127.0.0.1 on a random port; return (redirect_uri, server, thread)."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(("127.0.0.1", 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    server = http.server.HTTPServer(("127.0.0.1", port), _CallbackHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return f"http://127.0.0.1:{port}/callback", server, thread
+
+
+def authorize(auth_endpoint: str, client_id: str, redirect_uri: str,
+              scopes: list[str]) -> tuple[str, str]:
+    """Open browser, wait for callback, return (code, verifier)."""
+    verifier = b64url(secrets.token_bytes(32))
+    challenge = b64url(hashlib.sha256(verifier.encode()).digest())
+    state = b64url(secrets.token_bytes(16))
+    params = {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "code_challenge": challenge,
+        "code_challenge_method": "S256",
+        "state": state,
+    }
+    if scopes:
+        params["scope"] = " ".join(scopes)
+    url = f"{auth_endpoint}?{urllib.parse.urlencode(params)}"
+    print(f"\n  ▸ opening browser for authorization...")
+    print(f"    (if it doesn't open, paste this URL manually:)")
+    print(f"    {url}\n")
+    webbrowser.open(url)
+
+    # Wait up to 5 min for callback.
+    import time
+    for _ in range(300):
+        if _CallbackHandler.result is not None:
+            break
+        time.sleep(1)
+    result = _CallbackHandler.result
+    if result is None:
+        die("timed out waiting for browser callback (5 min)")
+    if result.get("state") != state:
+        die(f"state mismatch — possible CSRF. expected {state}, got {result.get('state')}")
+    if "error" in result:
+        die(f"authorization error: {result.get('error')} — {result.get('error_description', '')}")
+    code = result.get("code")
+    if not code:
+        die(f"no code in callback params: {result}")
+    print(f"  ▸ got authorization code ({len(code)} chars)")
+    return code, verifier
+
+
+def exchange_code(token_endpoint: str, client_id: str, client_secret: str,
+                  redirect_uri: str, code: str, verifier: str) -> dict:
+    body = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": redirect_uri,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code_verifier": verifier,
+    }
+    print(f"  ▸ exchanging code at {token_endpoint}")
+    status, data, _ = http_json(
+        token_endpoint, method="POST", body=body,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    if status != 200:
+        die(f"token exchange failed: HTTP {status}\n{json.dumps(data, indent=2)}")
+    return data
+
+
+def die(msg: str, code: int = 1) -> None:
+    print(f"\n✗ {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def main() -> int:
+    print("krisp-sync bootstrap — one-time OAuth setup")
+    print(f"  state dir: {STATE_DIR}")
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if TOKEN_FILE.exists():
+        print(f"\n⚠  Existing token at {TOKEN_FILE}")
+        ans = input("    overwrite? [y/N] ").strip().lower()
+        if ans != "y":
+            print("  aborted, keeping existing token.")
+            return 0
+
+    print("\n[1/5] Discovering authorization server...")
+    as_base, meta, pr_scopes = discover()
+    auth_ep = meta.get("authorization_endpoint")
+    token_ep = meta.get("token_endpoint")
+    reg_ep = meta.get("registration_endpoint")
+    # Prefer the protected-resource's scope list (these are the scopes
+    # valid for THIS resource); fall back to AS-wide scopes if missing.
+    scopes = pr_scopes or meta.get("scopes_supported") or []
+    if not auth_ep or not token_ep:
+        die(f"missing authorization_endpoint or token_endpoint:\n{json.dumps(meta, indent=2)}")
+    if not reg_ep:
+        die(f"no registration_endpoint — DCR not supported? metadata:\n{json.dumps(meta, indent=2)}")
+    print(f"  ▸ authorization_endpoint: {auth_ep}")
+    print(f"  ▸ token_endpoint:         {token_ep}")
+    print(f"  ▸ registration_endpoint:  {reg_ep}")
+    print(f"  ▸ scopes:                 {scopes}")
+
+    print("\n[2/5] Starting loopback server for redirect...")
+    redirect_uri, server, _thread = run_loopback()
+    print(f"  ▸ redirect_uri: {redirect_uri}")
+
+    print("\n[3/5] Registering OAuth client (DCR)...")
+    client = register(reg_ep, redirect_uri, scopes)
+    client_id = client["client_id"]
+    client_secret = client["client_secret"]
+
+    print("\n[4/5] Browser authorization...")
+    code, verifier = authorize(auth_ep, client_id, redirect_uri, scopes)
+    server.shutdown()
+
+    print("\n[5/5] Exchanging code for tokens...")
+    tokens = exchange_code(token_ep, client_id, client_secret, redirect_uri, code, verifier)
+    refresh = tokens.get("refresh_token")
+    if not refresh:
+        die(f"no refresh_token in token response — cannot run unattended:\n{json.dumps(tokens, indent=2)}")
+
+    persisted = {
+        "refresh_token": refresh,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "token_endpoint": token_ep,
+        "authorization_server": as_base,
+        "resource": MCP_RESOURCE,
+        "scope": tokens.get("scope") or " ".join(scopes),
+    }
+    TOKEN_FILE.write_text(json.dumps(persisted, indent=2))
+    os.chmod(TOKEN_FILE, 0o600)
+
+    print(f"\n✓ success — persisted refresh token to {TOKEN_FILE}")
+    print(f"  access token (current, expires in {tokens.get('expires_in', '?')}s): {tokens.get('access_token', '')[:40]}...")
+    print(f"\nNext: run `krisp-sync` to do the first sync, then enable the launchd agent.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -10,12 +10,34 @@
         <string>{{ .chezmoi.homeDir }}/.local/bin/slackdump-sync</string>
     </array>
 
-    <!-- Run every hour. Also runs once at load time. -->
-    <key>StartInterval</key>
-    <integer>3600</integer>
+    <!-- Fire hourly between 07:00 and 19:00 local, inclusive (13 runs/day).
+         Nothing meaningful happens on the tracked Slack workspace outside
+         working hours, so there's no point paying the API + audit-log
+         cost of syncing at night. launchd entirely skips the job outside
+         the scheduled hours — no early-exit guard needed in the script.
+
+         Intentionally NOT RunAtLoad: reloading the agent must not
+         trigger an unscheduled Slack API call. To force a run outside
+         hours, invoke ~/.local/bin/slackdump-sync directly. -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>10</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>14</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>0</integer></dict>
+    </array>
 
     <key>RunAtLoad</key>
-    <true/>
+    <false/>
 
     <key>StandardOutPath</key>
     <string>{{ .chezmoi.homeDir }}/Library/Logs/slackdump-sync.log</string>

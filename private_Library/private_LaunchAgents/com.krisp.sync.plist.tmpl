@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.krisp.sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{ .chezmoi.homeDir }}/.local/bin/krisp-sync</string>
+    </array>
+
+    <!-- Hourly. Intentionally NOT RunAtLoad — `launchctl load`/kickstart
+         must not trigger an unscheduled API call. To force an immediate
+         run: ~/.local/bin/krisp-sync (optionally with --all for backfill). -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>{{ .chezmoi.homeDir }}/Library/Logs/krisp-sync.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>{{ .chezmoi.homeDir }}/Library/Logs/krisp-sync.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>LowPriorityIO</key>
+    <true/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>{{ .chezmoi.homeDir }}/.asdf/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>{{ .chezmoi.homeDir }}</string>
+    </dict>
+</dict>
+</plist>

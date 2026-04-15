@@ -252,3 +252,8 @@ on-mode-changed = ['exec-and-forget sketchybar --trigger aerospace_mode_changed'
 [[on-window-detected]]
     if.app-id = 'org.hammerspoon.Hammerspoon'
     run = 'layout floating'
+
+# Krisp: floating notification on workspace Z so it doesn't tile or steal focus
+[[on-window-detected]]
+    if.app-id = 'ai.krisp.krispMac'
+    run = ['move-node-to-workspace Z', 'layout floating']
