@@ -1,9 +1,3 @@
-# Poll source every 2s so sort changes made via the ctrl-x action picker
-# (which can't chain reload_source) propagate without an explicit reload.
-# NOTE: must be above any [table] header — otherwise TOML parses it as a
-# field of whatever table precedes it.
-watch = 2.0
-
 [metadata]
 name = "claude-sessions"
 description = "Browse and resume Claude Code sessions"
