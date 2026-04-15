@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# slackdump-sync — hourly Slack → Obsidian sync
+#
+# Maintains two SQLite archives (DMs + the #cognite-internal channel) in
+# ~/Library/Application Support/slackdump-sync/, then renders them as
+# markdown into the Obsidian vault. Driven by launchd (see
+# ~/Library/LaunchAgents/com.slackdump.sync.plist).
+#
+# First invocation on each archive dir creates it via `slackdump archive`;
+# every subsequent run uses `slackdump resume` for incremental fetches.
+set -euo pipefail
+
+WORKSPACE="helloparallax"
+COGNITE_CHANNEL="C09EAH2KZJ6"
+BASE_DIR="$HOME/Library/Application Support/slackdump-sync"
+DMS_DIR="$BASE_DIR/dms"
+COG_DIR="$BASE_DIR/cognite"
+VAULT_DIR="$HOME/Documents/obsidian/work-notes/work-notes"
+CONVERTER="$HOME/.local/bin/slackdump-to-md.py"
+LOG_DIR="$HOME/Library/Logs"
+
+mkdir -p "$BASE_DIR" "$LOG_DIR"
+
+# sync_archive <dir> <resume-flags...> -- <archive-flags-and-channels...>
+# On first run (no DB yet) passes archive-flags; on resume, passes resume-flags.
+# The two sets differ because `archive` needs -chan-types / channel IDs up front,
+# whereas `resume` re-uses the channel set recorded in the DB.
+sync_archive() {
+  local dir="$1"; shift
+  local resume_args=() archive_args=()
+  local seen_sep=0
+  for arg in "$@"; do
+    if [[ "$arg" == "--" ]]; then seen_sep=1; continue; fi
+    if (( seen_sep )); then archive_args+=("$arg"); else resume_args+=("$arg"); fi
+  done
+  # ${arr[@]+"${arr[@]}"} safely expands to nothing when the array is empty,
+  # which matters under `set -u` (bash errors on "${empty[@]}" otherwise).
+  if [[ -f "$dir/slackdump.sqlite" ]]; then
+    echo "[$(date '+%F %T')] resuming $dir"
+    slackdump resume -workspace "$WORKSPACE" ${resume_args[@]+"${resume_args[@]}"} "$dir"
+  else
+    echo "[$(date '+%F %T')] archiving (first run) $dir — this may take a while"
+    mkdir -p "$dir"
+    slackdump archive -workspace "$WORKSPACE" -o "$dir" ${archive_args[@]+"${archive_args[@]}"}
+  fi
+}
+
+# DMs + group DMs. -refresh on resume picks up newly-appearing IMs.
+sync_archive "$DMS_DIR" -refresh -- -chan-types=im,mpim
+
+# #cognite-internal only (no -refresh: channel set is fixed)
+sync_archive "$COG_DIR" -- "$COGNITE_CHANNEL"
+
+# Render both archives into a single flat Slack/ folder in the vault.
+# DMs become Slack/<Real Name>.md, cognite becomes Slack/cognite-internal.md.
+# Attachments live in the archive's __uploads/ dir; symlink it into the vault
+# so Obsidian can render images inline without duplicating disk space.
+mkdir -p "$VAULT_DIR/Slack/_attachments"
+ln -sfn "$DMS_DIR/__uploads" "$VAULT_DIR/Slack/_attachments/dms"
+ln -sfn "$COG_DIR/__uploads" "$VAULT_DIR/Slack/_attachments/cognite"
+
+# Filter on the converter side — slackdump's `-refresh` on resume can pull
+# extra visible channels into the DB even when the archive was seeded with
+# `-chan-types=im,mpim`. Belt-and-braces: only emit the kinds we want.
+python3 "$CONVERTER" "$DMS_DIR/slackdump.sqlite" "$VAULT_DIR/Slack" "_attachments/dms" \
+    --types=im,mpim
+python3 "$CONVERTER" "$COG_DIR/slackdump.sqlite" "$VAULT_DIR/Slack" "_attachments/cognite" \
+    --only="$COGNITE_CHANNEL"
+
+echo "[$(date '+%F %T')] done"
