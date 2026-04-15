@@ -83,7 +83,20 @@ for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
                         last_usage = u
     except Exception:
         pass
-    label = re.sub(r'<[^>]+>', '', first_msg).strip()[:120].replace('\\n', ' ') or sid
+    # Prefer the LLM-generated recap sidecar if present — written by
+    # claude-recap-gen.py. Falls back to first user message otherwise.
+    recap_label = ''
+    try:
+        with open(jsonl + '.recap') as rf:
+            rdata = json.load(rf)
+            if isinstance(rdata, dict):
+                recap_label = (rdata.get('recap') or '').strip()
+    except Exception:
+        pass
+    if recap_label:
+        label = recap_label[:160].replace('\\n', ' ')
+    else:
+        label = re.sub(r'<[^>]+>', '', first_msg).strip()[:120].replace('\\n', ' ') or sid
     dt = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M')
     created_ts = first_ts if first_ts is not None else os.path.getctime(jsonl)
     age = fmt_age(max(0, now - created_ts))

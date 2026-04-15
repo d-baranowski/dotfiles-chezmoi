@@ -21,6 +21,7 @@ re-summarising the whole transcript, and yields coherent progressive
 summaries. A <jsonl>.recap.lock sentinel prevents duplicate concurrent
 generations; it's removed on exit.
 """
+import glob as globlib
 import json
 import os
 import subprocess
@@ -30,29 +31,36 @@ import time
 TURN_LIMIT = 30           # how many user/assistant turns to feed on a cold recap
 PER_TURN_CHARS = 500      # truncate each turn to keep the prompt bounded
 MAX_TRANSCRIPT = 8000     # hard cap on the transcript block
-MAX_RECAP_CHARS = 200
+MAX_RECAP_CHARS = 320
 CLAUDE_TIMEOUT = 90       # seconds
 # When a prior recap exists, skip the LLM call unless the jsonl has grown
 # by at least this much. Mirrors STALENESS_BYTES in claude-session-preview.py.
 # Lets the Stop hook fire eagerly without burning a Haiku call every turn.
 MIN_GROWTH_BYTES = 2000
 
+# Every `claude -p` call creates a session jsonl under ~/.claude/projects/.
+# We clean ours up (via the session_id in the JSON output) so they don't
+# clutter the TV channel. This prefix is how the one-time sweeper identifies
+# orphaned recap sessions from before deletion was wired up — keep stable.
+PROMPT_PREFIX = "Summarize this Claude Code session in ONE short sentence"
+UPDATE_PROMPT_PREFIX = "You previously summarised a Claude Code session as:"
+
 INITIAL_PROMPT = (
-    "Summarize this Claude Code session in ONE short sentence "
-    "(max 80 characters). Focus on the task or problem the user asked about. "
-    "Reply with ONLY the sentence — no preamble, no quotes, no trailing period "
-    "if it can be avoided.\n\n---\n"
+    PROMPT_PREFIX
+    + " (max 320 characters, but shorter is better — aim for 1–3 sentences). "
+    "Focus on what the user was trying to accomplish and any concrete outcomes. "
+    "Reply with ONLY the summary — no preamble, no quotes, no bullet points.\n\n---\n"
 )
 
 UPDATE_PROMPT_TEMPLATE = (
-    "You previously summarised a Claude Code session as:\n"
+    UPDATE_PROMPT_PREFIX + "\n"
     "  {prior}\n\n"
     "Since then, these additional turns have happened:\n"
     "---\n{new_turns}\n---\n\n"
-    "Produce an UPDATED one-sentence summary (max 80 chars) that reflects "
+    "Produce an UPDATED summary (max 320 chars, 1–3 sentences) that reflects "
     "the session as a whole including the new turns. If the new turns don't "
     "meaningfully change the summary, return the previous one unchanged. "
-    "Reply with ONLY the sentence — no preamble, no quotes."
+    "Reply with ONLY the summary — no preamble, no quotes."
 )
 
 
@@ -151,19 +159,30 @@ def main():
             rendered = render_turns(all_turns[:TURN_LIMIT])
             prompt = INITIAL_PROMPT + rendered
 
+        # --output-format json lets us both (a) parse the recap reliably and
+        # (b) grab the session_id so we can delete the ephemeral session file
+        # that claude -p creates. Without deletion, every recap invocation
+        # clutters the TV channel with a throwaway session.
         result = subprocess.run(
-            ["claude", "-p", prompt],
+            ["claude", "-p", "--output-format", "json", prompt],
             capture_output=True,
             text=True,
             timeout=CLAUDE_TIMEOUT,
         )
         out = (result.stdout or "").strip()
         recap = ""
-        for line in out.splitlines():
-            line = line.strip()
-            if line:
-                recap = line
-                break
+        session_id = ""
+        try:
+            parsed = json.loads(out)
+            if isinstance(parsed, dict):
+                recap = (parsed.get("result") or "").strip()
+                session_id = parsed.get("session_id") or ""
+        except Exception:
+            # Fallback: treat whole stdout as the reply.
+            recap = out
+
+        # Strip any wrapping quotes the model added despite instructions.
+        recap = recap.strip().replace("\n", " ").strip()
         if recap and len(recap) >= 2 and recap[0] == recap[-1] and recap[0] in ("'", '"'):
             recap = recap[1:-1].strip()
         if not recap:
@@ -171,6 +190,8 @@ def main():
         recap = recap[:MAX_RECAP_CHARS]
 
         _write_recap(recap_path, recap, st, turn_count)
+        if session_id:
+            _delete_ephemeral_session(session_id)
     except Exception as e:
         # Preserve any prior recap; just don't blow up. If we have no prior,
         # cache a failure marker so we don't retry on every preview keystroke.
@@ -189,6 +210,29 @@ def main():
         try:
             os.unlink(lock_path)
         except FileNotFoundError:
+            pass
+
+
+def _delete_ephemeral_session(session_id):
+    """Remove the session jsonl that `claude -p` just created. These show up
+    under ~/.claude/projects/<encoded-cwd>/<session_id>.jsonl. We also remove
+    the matching file-history-snapshot dir that Claude Code drops alongside."""
+    base = os.path.expanduser("~/.claude/projects")
+    for jsonl in globlib.glob(
+        os.path.join(base, "**", session_id + ".jsonl"), recursive=True
+    ):
+        try:
+            os.unlink(jsonl)
+        except OSError:
+            pass
+    # Remove associated snapshots/tool-results dir if Claude Code made one.
+    for extra in globlib.glob(
+        os.path.join(base, "**", session_id), recursive=True
+    ):
+        try:
+            import shutil
+            shutil.rmtree(extra, ignore_errors=True)
+        except Exception:
             pass
 
 
