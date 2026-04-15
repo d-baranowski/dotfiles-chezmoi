@@ -250,3 +250,11 @@ tv-claude	(auto)	sort changes from ctrl-x action picker propagate within ~2s via
 # ── claude code ─────────────────────────────────────────────────
 
 claude-code	shift-f5	push to talk (voice)
+
+# ── google chrome ───────────────────────────────────────────────
+
+google-chrome	ctrl-space	search open tabs (tab search)
+google-chrome	ctrl-shift-a	search open tabs (tab search)
+google-chrome	ctrl-l	focus url bar (omnibox)
+google-chrome	ctrl-shift-j	next tab (space held = shift: ctrl-space-j)
+google-chrome	ctrl-shift-k	previous tab (space held = shift: ctrl-space-k)
