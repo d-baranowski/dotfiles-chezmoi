@@ -5,7 +5,7 @@ requirements = ["claude", "python3"]
 
 [ui]
 preview_panel = { size = 40 }
-input_bar = { header = "sort: ^s size  ^t date  ^n created  ^p project   |   ↵ resume  ^r reload" }
+input_bar = { header = "sort: ^s size  ^t date  ^n created  ^p project   |   ↵ resume  F5 reload" }
 status_bar = { hidden = true }
 help_panel = { hidden = true }
 
@@ -149,6 +149,9 @@ ctrl-s = ["actions:sort_by_size", "reload_source"]
 ctrl-t = ["actions:sort_by_date", "reload_source"]
 ctrl-n = ["actions:sort_by_created", "reload_source"]
 ctrl-p = ["actions:sort_by_project", "reload_source"]
+# F5 for reload — the global ctrl-r is bound to toggle_remote_control
+# (channel picker) and we don't want to shadow that here.
+f5 = "reload_source"
 
 [actions.resume]
 description = "Resume the selected Claude session"
