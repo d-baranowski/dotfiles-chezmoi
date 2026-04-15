@@ -1,734 +1,1068 @@
 {
-  "actions" : [
+  "actions": [
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "m",
-          "label" : "workspace M",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace M"
+          "key": "m",
+          "label": "workspace M",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace M"
         },
         {
-          "key" : "b",
-          "label" : "workspace B",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace B"
+          "key": "b",
+          "label": "workspace B",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace B"
         },
         {
-          "key" : "n",
-          "label" : "workspace N",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace N"
+          "key": "n",
+          "label": "workspace N",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace N"
         },
         {
-          "key" : "s",
-          "label" : "workspace S",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace S"
+          "key": "s",
+          "label": "workspace S",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace S"
         },
         {
-          "key" : "c",
-          "label" : "workspace C",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace C"
+          "key": "c",
+          "label": "workspace C",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace C"
         },
         {
-          "key" : "d",
-          "label" : "workspace D",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace D"
+          "key": "d",
+          "label": "workspace D",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace D"
         },
         {
-          "key" : "t",
-          "label" : "workspace T",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace T"
+          "key": "t",
+          "label": "workspace T",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace T"
         },
         {
-          "key" : "z",
-          "label" : "workspace Z",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace Z"
+          "key": "z",
+          "label": "workspace Z",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace Z"
         },
         {
-          "key" : "i",
-          "label" : "workspace I",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace I"
+          "key": "i",
+          "label": "workspace I",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace I"
         },
         {
-          "key" : "a",
-          "label" : "workspace A",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace A"
+          "key": "a",
+          "label": "workspace A",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace A"
         },
         {
-          "key" : "1",
-          "label" : "workspace 1",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 1"
+          "key": "1",
+          "label": "workspace 1",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 1"
         },
         {
-          "key" : "2",
-          "label" : "workspace 2",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 2"
+          "key": "2",
+          "label": "workspace 2",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 2"
         },
         {
-          "key" : "3",
-          "label" : "workspace 3",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 3"
+          "key": "3",
+          "label": "workspace 3",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 3"
         },
         {
-          "key" : "4",
-          "label" : "workspace 4",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 4"
+          "key": "4",
+          "label": "workspace 4",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 4"
         },
         {
-          "key" : "5",
-          "label" : "workspace 5",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 5"
+          "key": "5",
+          "label": "workspace 5",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 5"
         },
         {
-          "key" : "6",
-          "label" : "workspace 6",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 6"
+          "key": "6",
+          "label": "workspace 6",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 6"
         },
         {
-          "key" : "7",
-          "label" : "workspace 7",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 7"
+          "key": "7",
+          "label": "workspace 7",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 7"
         },
         {
-          "key" : "8",
-          "label" : "workspace 8",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 8"
+          "key": "8",
+          "label": "workspace 8",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 8"
         },
         {
-          "key" : "9",
-          "label" : "workspace 9",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace workspace 9"
+          "key": "9",
+          "label": "workspace 9",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace workspace 9"
         }
       ],
-      "iconPath" : "widget.medium",
-      "key" : "g",
-      "label" : "go to workspace",
-      "type" : "group"
+      "iconPath": "widget.medium",
+      "key": "g",
+      "label": "go to workspace",
+      "type": "group"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "m",
-          "label" : "move to M",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace M"
+          "key": "m",
+          "label": "move to M",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace M"
         },
         {
-          "key" : "b",
-          "label" : "move to B",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace B"
+          "key": "b",
+          "label": "move to B",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace B"
         },
         {
-          "key" : "n",
-          "label" : "move to N",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace N"
+          "key": "n",
+          "label": "move to N",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace N"
         },
         {
-          "key" : "s",
-          "label" : "move to S",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace S"
+          "key": "s",
+          "label": "move to S",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace S"
         },
         {
-          "key" : "c",
-          "label" : "move to C",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace C"
+          "key": "c",
+          "label": "move to C",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace C"
         },
         {
-          "key" : "d",
-          "label" : "move to D",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace D"
+          "key": "d",
+          "label": "move to D",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace D"
         },
         {
-          "key" : "t",
-          "label" : "move to T",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace T"
+          "key": "t",
+          "label": "move to T",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace T"
         },
         {
-          "key" : "z",
-          "label" : "move to Z",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace Z"
+          "key": "z",
+          "label": "move to Z",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace Z"
         },
         {
-          "key" : "i",
-          "label" : "move to I",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace I"
+          "key": "i",
+          "label": "move to I",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace I"
         },
         {
-          "key" : "a",
-          "label" : "move to A",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace A"
+          "key": "a",
+          "label": "move to A",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace A"
         },
         {
-          "key" : "1",
-          "label" : "move to 1",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 1"
+          "key": "1",
+          "label": "move to 1",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 1"
         },
         {
-          "key" : "2",
-          "label" : "move to 2",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 2"
+          "key": "2",
+          "label": "move to 2",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 2"
         },
         {
-          "key" : "3",
-          "label" : "move to 3",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 3"
+          "key": "3",
+          "label": "move to 3",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 3"
         },
         {
-          "key" : "4",
-          "label" : "move to 4",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 4"
+          "key": "4",
+          "label": "move to 4",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 4"
         },
         {
-          "key" : "5",
-          "label" : "move to 5",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 5"
+          "key": "5",
+          "label": "move to 5",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 5"
         },
         {
-          "key" : "6",
-          "label" : "move to 6",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 6"
+          "key": "6",
+          "label": "move to 6",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 6"
         },
         {
-          "key" : "7",
-          "label" : "move to 7",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 7"
+          "key": "7",
+          "label": "move to 7",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 7"
         },
         {
-          "key" : "8",
-          "label" : "move to 8",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 8"
+          "key": "8",
+          "label": "move to 8",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 8"
         },
         {
-          "key" : "9",
-          "label" : "move to 9",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace move-node-to-workspace 9"
+          "key": "9",
+          "label": "move to 9",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace move-node-to-workspace 9"
         }
       ],
-      "iconPath" : "widget.medium.badge.plus",
-      "key" : "v",
-      "label" : "Move to workspace",
-      "type" : "group"
+      "iconPath": "widget.medium.badge.plus",
+      "key": "v",
+      "label": "Move to workspace",
+      "type": "group"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "a",
-          "label" : "area screenshot",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh area"
+          "key": "a",
+          "label": "area screenshot",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/screenshot.sh area"
         },
         {
-          "key" : "f",
-          "label" : "full screenshot",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh full"
+          "key": "f",
+          "label": "full screenshot",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/screenshot.sh full"
         },
         {
-          "key" : "w",
-          "label" : "window screenshot",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh window"
+          "key": "w",
+          "label": "window screenshot",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/screenshot.sh window"
         },
         {
-          "key" : "r",
-          "label" : "record screen",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh record"
+          "key": "r",
+          "label": "record screen",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/screenshot.sh record"
         },
         {
-          "key" : "o",
-          "label" : "open screenshots folder",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/screenshot.sh open"
+          "key": "o",
+          "label": "open screenshots folder",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/screenshot.sh open"
         }
       ],
-      "iconPath" : "camera",
-      "key" : "s",
-      "label" : "Screenshot",
-      "type" : "group"
+      "iconPath": "camera",
+      "key": "s",
+      "label": "Screenshot",
+      "type": "group"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "actions" : [
+          "actions": [
             {
-              "key" : "m",
-              "label" : "workspace M",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace M"
+              "key": "m",
+              "label": "workspace M",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace M"
             },
             {
-              "key" : "b",
-              "label" : "workspace B",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace B"
+              "key": "b",
+              "label": "workspace B",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace B"
             },
             {
-              "key" : "n",
-              "label" : "workspace N",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace N"
+              "key": "n",
+              "label": "workspace N",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace N"
             },
             {
-              "key" : "s",
-              "label" : "workspace S",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace S"
+              "key": "s",
+              "label": "workspace S",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace S"
             },
             {
-              "key" : "c",
-              "label" : "workspace C",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace C"
+              "key": "c",
+              "label": "workspace C",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace C"
             },
             {
-              "key" : "d",
-              "label" : "workspace D",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace D"
+              "key": "d",
+              "label": "workspace D",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace D"
             },
             {
-              "key" : "t",
-              "label" : "workspace T",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace T"
+              "key": "t",
+              "label": "workspace T",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace T"
             },
             {
-              "key" : "z",
-              "label" : "workspace Z",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace Z"
+              "key": "z",
+              "label": "workspace Z",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace Z"
             },
             {
-              "key" : "i",
-              "label" : "workspace I",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace I"
+              "key": "i",
+              "label": "workspace I",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace I"
             },
             {
-              "key" : "a",
-              "label" : "workspace A",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace A"
+              "key": "a",
+              "label": "workspace A",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace A"
             },
             {
-              "key" : "1",
-              "label" : "workspace 1",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 1"
+              "key": "1",
+              "label": "workspace 1",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 1"
             },
             {
-              "key" : "2",
-              "label" : "workspace 2",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 2"
+              "key": "2",
+              "label": "workspace 2",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 2"
             },
             {
-              "key" : "3",
-              "label" : "workspace 3",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 3"
+              "key": "3",
+              "label": "workspace 3",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 3"
             },
             {
-              "key" : "4",
-              "label" : "workspace 4",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 4"
+              "key": "4",
+              "label": "workspace 4",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 4"
             },
             {
-              "key" : "5",
-              "label" : "workspace 5",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 5"
+              "key": "5",
+              "label": "workspace 5",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 5"
             },
             {
-              "key" : "6",
-              "label" : "workspace 6",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 6"
+              "key": "6",
+              "label": "workspace 6",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 6"
             },
             {
-              "key" : "7",
-              "label" : "workspace 7",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 7"
+              "key": "7",
+              "label": "workspace 7",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 7"
             },
             {
-              "key" : "8",
-              "label" : "workspace 8",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 8"
+              "key": "8",
+              "label": "workspace 8",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 8"
             },
             {
-              "key" : "9",
-              "label" : "workspace 9",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace workspace 9"
+              "key": "9",
+              "label": "workspace 9",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace workspace 9"
             }
           ],
-          "key" : "g",
-          "label" : "go to workspace",
-          "type" : "group"
+          "key": "g",
+          "label": "go to workspace",
+          "type": "group"
         },
         {
-          "key" : "b",
-          "label" : "Chrome",
-          "type" : "application",
-          "value" : "/Applications/Chrome.app"
+          "key": "b",
+          "label": "Chrome",
+          "type": "application",
+          "value": "/Applications/Chrome.app"
         },
         {
-          "key" : "s",
-          "label" : "Slack",
-          "type" : "application",
-          "value" : "/Applications/Slack.app"
+          "key": "s",
+          "label": "Slack",
+          "type": "application",
+          "value": "/Applications/Slack.app"
         },
         {
-          "key" : "w",
-          "label" : "WhatsApp",
-          "type" : "application",
-          "value" : "/Applications/WhatsApp.app"
+          "key": "w",
+          "label": "WhatsApp",
+          "type": "application",
+          "value": "/Applications/WhatsApp.app"
         },
         {
-          "key" : "o",
-          "label" : "Obsidian",
-          "type" : "application",
-          "value" : "/Applications/Obsidian.app"
+          "key": "o",
+          "label": "Obsidian",
+          "type": "application",
+          "value": "/Applications/Obsidian.app"
         },
         {
-          "key" : "t",
-          "label" : "Alacritty",
-          "type" : "application",
-          "value" : "/Applications/Alacritty.app"
+          "key": "t",
+          "label": "Alacritty",
+          "type": "application",
+          "value": "/Applications/Alacritty.app"
         },
         {
-          "key" : "a",
-          "label" : "Activity Monitor",
-          "type" : "application",
-          "value" : "/System/Applications/Utilities/Activity Monitor.app"
+          "key": "a",
+          "label": "Activity Monitor",
+          "type": "application",
+          "value": "/System/Applications/Utilities/Activity Monitor.app"
         },
         {
-          "key" : "f",
-          "label" : "Applications folder (manage/trash)",
-          "type" : "command",
-          "value" : "open /Applications"
+          "key": "f",
+          "label": "Applications folder (manage/trash)",
+          "type": "command",
+          "value": "open /Applications"
         }
       ],
-      "iconPath" : "append.page",
-      "key" : "o",
-      "label" : "App",
-      "type" : "group"
+      "iconPath": "append.page",
+      "key": "o",
+      "label": "App",
+      "type": "group"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "f",
-          "label" : "fullscreen",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace fullscreen && sketchybar --trigger aerospace_mode_changed"
+          "key": "f",
+          "label": "fullscreen",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace fullscreen && sketchybar --trigger aerospace_mode_changed"
         },
         {
-          "key" : "F",
-          "label" : "flatten-workspace-tree",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace flatten-workspace-tree && sketchybar --trigger aerospace_mode_changed"
+          "key": "F",
+          "label": "flatten-workspace-tree",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace flatten-workspace-tree && sketchybar --trigger aerospace_mode_changed"
         },
         {
-          "actions" : [
+          "actions": [
             {
-              "key" : "h",
-              "label" : "left",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace join-with left"
+              "key": "h",
+              "label": "left",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace join-with left"
             },
             {
-              "key" : "j",
-              "label" : "down",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace join-with down"
+              "key": "j",
+              "label": "down",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace join-with down"
             },
             {
-              "key" : "k",
-              "label" : "up",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace join-with up"
+              "key": "k",
+              "label": "up",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace join-with up"
             },
             {
-              "key" : "l",
-              "label" : "right",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace join-with right"
+              "key": "l",
+              "label": "right",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace join-with right"
             }
           ],
-          "key" : "j",
-          "label" : "join-with",
-          "type" : "group"
+          "key": "j",
+          "label": "join-with",
+          "type": "group"
         },
         {
-          "actions" : [
+          "actions": [
             {
-              "key" : "a",
-              "label" : "accordion",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace layout accordion horizontal vertical && sketchybar --trigger aerospace_mode_changed"
+              "key": "a",
+              "label": "accordion",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace layout accordion horizontal vertical && sketchybar --trigger aerospace_mode_changed"
             },
             {
-              "key" : "f",
-              "label" : "floating",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace layout floating tiling && sketchybar --trigger aerospace_mode_changed"
+              "key": "f",
+              "label": "floating",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace layout floating tiling && sketchybar --trigger aerospace_mode_changed"
             },
             {
-              "key" : "t",
-              "label" : "tiles",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace layout tiles vertical horizontal && sketchybar --trigger aerospace_mode_changed"
+              "key": "t",
+              "label": "tiles",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace layout tiles vertical horizontal && sketchybar --trigger aerospace_mode_changed"
             }
           ],
-          "key" : "l",
-          "label" : "layout",
-          "type" : "group"
+          "key": "l",
+          "label": "layout",
+          "type": "group"
         },
         {
-          "actions" : [
+          "actions": [
             {
-              "key" : "n",
-              "label" : "next monitor",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace move-workspace-to-monitor --wrap-around next"
+              "key": "n",
+              "label": "next monitor",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace move-workspace-to-monitor --wrap-around next"
             },
             {
-              "key" : "p",
-              "label" : "prev monitor",
-              "type" : "command",
-              "value" : "/opt/homebrew/bin/aerospace move-workspace-to-monitor --wrap-around prev"
+              "key": "p",
+              "label": "prev monitor",
+              "type": "command",
+              "value": "/opt/homebrew/bin/aerospace move-workspace-to-monitor --wrap-around prev"
             }
           ],
-          "key" : "M",
-          "label" : "move workspace to monitor",
-          "type" : "group"
+          "key": "M",
+          "label": "move workspace to monitor",
+          "type": "group"
         },
         {
-          "key" : "R",
-          "label" : "reload-config",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace reload-config"
+          "key": "R",
+          "label": "reload-config",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace reload-config"
         },
         {
-          "key" : "s",
-          "label" : "mode resize",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace mode resize && sketchybar --trigger aerospace_mode_changed"
+          "key": "s",
+          "label": "mode resize",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace mode resize && sketchybar --trigger aerospace_mode_changed"
         },
         {
-          "key" : "c",
-          "type" : "url",
-          "value" : "raycast://extensions/raycast/window-management/center"
+          "key": "c",
+          "type": "url",
+          "value": "raycast://extensions/raycast/window-management/center"
         },
         {
-          "key" : "o",
-          "label" : "resize smart -50 (shrink)",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace resize smart -50"
+          "key": "o",
+          "label": "resize smart -50 (shrink)",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace resize smart -50"
         },
         {
-          "key" : "p",
-          "label" : "resize smart +50 (grow)",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/aerospace resize smart +50"
+          "key": "p",
+          "label": "resize smart +50 (grow)",
+          "type": "command",
+          "value": "/opt/homebrew/bin/aerospace resize smart +50"
         }
       ],
-      "iconPath" : "rectangle.grid.2x2",
-      "key" : "w",
-      "label" : "Aerospace",
-      "type" : "group"
+      "iconPath": "rectangle.grid.2x2",
+      "key": "w",
+      "label": "Aerospace",
+      "type": "group"
     },
     {
-      "iconPath" : "rectangle.stack",
-      "key" : "k",
-      "label" : "workspace window picker",
-      "type" : "command",
-      "value" : "/opt/homebrew/bin/hs -c 'workspaces.showWindowPicker()'"
+      "iconPath": "rectangle.stack",
+      "key": "k",
+      "label": "workspace window picker",
+      "type": "command",
+      "value": "/opt/homebrew/bin/hs -c 'workspaces.showWindowPicker()'"
     },
     {
-      "actions" : [
+      "actions": [
         {
-          "key" : "r",
-          "label" : "reload leader",
-          "type" : "command",
-          "value" : "/bin/bash -c 'killall \"Leader Key\"; sleep 0.3; open -a \"Leader Key\"'"
+          "key": "r",
+          "label": "reload leader",
+          "type": "command",
+          "value": "/bin/bash -c 'killall \"Leader Key\"; sleep 0.3; open -a \"Leader Key\"'"
         },
         {
-          "key" : "m",
-          "label" : "toggle mic",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/toggle_mic.sh"
+          "key": "m",
+          "label": "toggle mic",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/toggle_mic.sh"
         },
         {
-          "key" : "n",
-          "label" : "clear notifications",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/clear_notifications.sh"
+          "key": "n",
+          "label": "clear notifications",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/clear_notifications.sh"
         },
         {
-          "key" : "b",
-          "label" : "go to claude notification",
-          "type" : "command",
-          "value" : "$HOME/.config/sketchybar/plugins/claude_notify_goto.sh"
+          "key": "b",
+          "label": "go to claude notification",
+          "type": "command",
+          "value": "$HOME/.config/sketchybar/plugins/claude_notify_goto.sh"
         },
         {
-          "key" : "k",
-          "label" : "force quit",
-          "type" : "command",
-          "value" : "osascript -e 'tell application \"System Events\" to key code 53 using {command down, option down}'"
+          "key": "k",
+          "label": "force quit",
+          "type": "command",
+          "value": "osascript -e 'tell application \"System Events\" to key code 53 using {command down, option down}'"
         },
         {
-          "key" : "/",
-          "label" : "search keybindings",
-          "type" : "command",
-          "value" : "/opt/homebrew/bin/hs -c 'keybindings.picker.show()'"
+          "key": "d",
+          "label": "debug logs",
+          "type": "group",
+          "actions": [
+            {
+              "key": "s",
+              "label": "slackdump log in nvim",
+              "type": "command",
+              "value": "/Applications/Alacritty.app/Contents/MacOS/alacritty --title 'slackdump-sync.log' -e nvim +'setlocal autoread' +'autocmd CursorHold * checktime' +'set updatetime=1000' $HOME/Library/Logs/slackdump-sync.log"
+            },
+            {
+              "key": "k",
+              "label": "krisp log in nvim",
+              "type": "command",
+              "value": "/Applications/Alacritty.app/Contents/MacOS/alacritty --title 'krisp-sync.log' -e nvim +'setlocal autoread' +'autocmd CursorHold * checktime' +'set updatetime=1000' $HOME/Library/Logs/krisp-sync.log"
+            }
+          ]
+        },
+        {
+          "key": "/",
+          "label": "search keybindings",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'keybindings.picker.show()'"
         }
       ],
-      "key" : "m",
-      "label" : "Main",
-      "type" : "group"
+      "key": "m",
+      "label": "Main",
+      "type": "group"
     },
     {
-      "actions" : [
-        { "key" : "h", "label" : "History picker", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showHistory()'" },
-        { "key" : "s", "label" : "Search", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showHistory()'" },
-        { "key" : "r", "label" : "Show registers", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" },
-        { "key" : "i", "label" : "Info / status", "type" : "command", "value" : "/opt/homebrew/bin/cb info" },
+      "actions": [
         {
-          "actions" : [
-            { "key" : "e", "label" : "paste cb_email", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh email" },
-            { "key" : "s", "label" : "paste cb_sig", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh sig" },
-            { "key" : "a", "label" : "paste cb_addr", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh addr" }
+          "key": "h",
+          "label": "History picker",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.picker.showHistory()'"
+        },
+        {
+          "key": "s",
+          "label": "Search",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.picker.showHistory()'"
+        },
+        {
+          "key": "r",
+          "label": "Show registers",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'"
+        },
+        {
+          "key": "i",
+          "label": "Info / status",
+          "type": "command",
+          "value": "/opt/homebrew/bin/cb info"
+        },
+        {
+          "actions": [
+            {
+              "key": "e",
+              "label": "paste cb_email",
+              "type": "command",
+              "value": "$HOME/.local/bin/lk-paste.sh email"
+            },
+            {
+              "key": "s",
+              "label": "paste cb_sig",
+              "type": "command",
+              "value": "$HOME/.local/bin/lk-paste.sh sig"
+            },
+            {
+              "key": "a",
+              "label": "paste cb_addr",
+              "type": "command",
+              "value": "$HOME/.local/bin/lk-paste.sh addr"
+            }
           ],
-          "key" : "n",
-          "label" : "Snippets",
-          "type" : "group"
+          "key": "n",
+          "label": "Snippets",
+          "type": "group"
         }
       ],
-      "iconPath" : "doc.on.clipboard",
-      "key" : "c",
-      "label" : "Clipboard",
-      "type" : "group"
+      "iconPath": "doc.on.clipboard",
+      "key": "c",
+      "label": "Clipboard",
+      "type": "group"
     },
     {
-      "actions" : [
-        { "key" : "a", "label" : "-> cb_a", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh a" },
-        { "key" : "b", "label" : "-> cb_b", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh b" },
-        { "key" : "c", "label" : "-> cb_c", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh c" },
-        { "key" : "d", "label" : "-> cb_d", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh d" },
-        { "key" : "e", "label" : "-> cb_e", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh e" },
-        { "key" : "f", "label" : "-> cb_f", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh f" },
-        { "key" : "g", "label" : "-> cb_g", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh g" },
-        { "key" : "h", "label" : "-> cb_h", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh h" },
-        { "key" : "i", "label" : "-> cb_i", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh i" },
-        { "key" : "j", "label" : "-> cb_j", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh j" },
-        { "key" : "k", "label" : "-> cb_k", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh k" },
-        { "key" : "l", "label" : "-> cb_l", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh l" },
-        { "key" : "m", "label" : "-> cb_m", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh m" },
-        { "key" : "n", "label" : "-> cb_n", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh n" },
-        { "key" : "o", "label" : "-> cb_o", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh o" },
-        { "key" : "p", "label" : "-> cb_p", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh p" },
-        { "key" : "q", "label" : "-> cb_q", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh q" },
-        { "key" : "r", "label" : "-> cb_r", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh r" },
-        { "key" : "s", "label" : "-> cb_s", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh s" },
-        { "key" : "t", "label" : "-> cb_t", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh t" },
-        { "key" : "u", "label" : "-> cb_u", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh u" },
-        { "key" : "v", "label" : "-> cb_v", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh v" },
-        { "key" : "w", "label" : "-> cb_w", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh w" },
-        { "key" : "x", "label" : "-> cb_x", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh x" },
-        { "key" : "y", "label" : "-> cb_y", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh y" },
-        { "key" : "z", "label" : "-> cb_z", "type" : "command", "value" : "$HOME/.local/bin/lk-yank.sh z" },
-        { "key" : "?", "label" : "Show all", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" }
+      "actions": [
+        {
+          "key": "a",
+          "label": "-> cb_a",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh a"
+        },
+        {
+          "key": "b",
+          "label": "-> cb_b",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh b"
+        },
+        {
+          "key": "c",
+          "label": "-> cb_c",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh c"
+        },
+        {
+          "key": "d",
+          "label": "-> cb_d",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh d"
+        },
+        {
+          "key": "e",
+          "label": "-> cb_e",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh e"
+        },
+        {
+          "key": "f",
+          "label": "-> cb_f",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh f"
+        },
+        {
+          "key": "g",
+          "label": "-> cb_g",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh g"
+        },
+        {
+          "key": "h",
+          "label": "-> cb_h",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh h"
+        },
+        {
+          "key": "i",
+          "label": "-> cb_i",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh i"
+        },
+        {
+          "key": "j",
+          "label": "-> cb_j",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh j"
+        },
+        {
+          "key": "k",
+          "label": "-> cb_k",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh k"
+        },
+        {
+          "key": "l",
+          "label": "-> cb_l",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh l"
+        },
+        {
+          "key": "m",
+          "label": "-> cb_m",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh m"
+        },
+        {
+          "key": "n",
+          "label": "-> cb_n",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh n"
+        },
+        {
+          "key": "o",
+          "label": "-> cb_o",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh o"
+        },
+        {
+          "key": "p",
+          "label": "-> cb_p",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh p"
+        },
+        {
+          "key": "q",
+          "label": "-> cb_q",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh q"
+        },
+        {
+          "key": "r",
+          "label": "-> cb_r",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh r"
+        },
+        {
+          "key": "s",
+          "label": "-> cb_s",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh s"
+        },
+        {
+          "key": "t",
+          "label": "-> cb_t",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh t"
+        },
+        {
+          "key": "u",
+          "label": "-> cb_u",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh u"
+        },
+        {
+          "key": "v",
+          "label": "-> cb_v",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh v"
+        },
+        {
+          "key": "w",
+          "label": "-> cb_w",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh w"
+        },
+        {
+          "key": "x",
+          "label": "-> cb_x",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh x"
+        },
+        {
+          "key": "y",
+          "label": "-> cb_y",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh y"
+        },
+        {
+          "key": "z",
+          "label": "-> cb_z",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-yank.sh z"
+        },
+        {
+          "key": "?",
+          "label": "Show all",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'"
+        }
       ],
-      "iconPath" : "arrow.right.doc.on.clipboard",
-      "key" : "y",
-      "label" : "Yank to register",
-      "type" : "group"
+      "iconPath": "arrow.right.doc.on.clipboard",
+      "key": "y",
+      "label": "Yank to register",
+      "type": "group"
     },
     {
-      "actions" : [
-        { "key" : "a", "label" : "<- cb_a", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh a" },
-        { "key" : "b", "label" : "<- cb_b", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh b" },
-        { "key" : "c", "label" : "<- cb_c", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh c" },
-        { "key" : "d", "label" : "<- cb_d", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh d" },
-        { "key" : "e", "label" : "<- cb_e", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh e" },
-        { "key" : "f", "label" : "<- cb_f", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh f" },
-        { "key" : "g", "label" : "<- cb_g", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh g" },
-        { "key" : "h", "label" : "<- cb_h", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh h" },
-        { "key" : "i", "label" : "<- cb_i", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh i" },
-        { "key" : "j", "label" : "<- cb_j", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh j" },
-        { "key" : "k", "label" : "<- cb_k", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh k" },
-        { "key" : "l", "label" : "<- cb_l", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh l" },
-        { "key" : "m", "label" : "<- cb_m", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh m" },
-        { "key" : "n", "label" : "<- cb_n", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh n" },
-        { "key" : "o", "label" : "<- cb_o", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh o" },
-        { "key" : "p", "label" : "<- cb_p", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh p" },
-        { "key" : "q", "label" : "<- cb_q", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh q" },
-        { "key" : "r", "label" : "<- cb_r", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh r" },
-        { "key" : "s", "label" : "<- cb_s", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh s" },
-        { "key" : "t", "label" : "<- cb_t", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh t" },
-        { "key" : "u", "label" : "<- cb_u", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh u" },
-        { "key" : "v", "label" : "<- cb_v", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh v" },
-        { "key" : "w", "label" : "<- cb_w", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh w" },
-        { "key" : "x", "label" : "<- cb_x", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh x" },
-        { "key" : "y", "label" : "<- cb_y", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh y" },
-        { "key" : "z", "label" : "<- cb_z", "type" : "command", "value" : "$HOME/.local/bin/lk-paste.sh z" },
-        { "key" : "?", "label" : "Show all", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" }
+      "actions": [
+        {
+          "key": "a",
+          "label": "<- cb_a",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh a"
+        },
+        {
+          "key": "b",
+          "label": "<- cb_b",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh b"
+        },
+        {
+          "key": "c",
+          "label": "<- cb_c",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh c"
+        },
+        {
+          "key": "d",
+          "label": "<- cb_d",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh d"
+        },
+        {
+          "key": "e",
+          "label": "<- cb_e",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh e"
+        },
+        {
+          "key": "f",
+          "label": "<- cb_f",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh f"
+        },
+        {
+          "key": "g",
+          "label": "<- cb_g",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh g"
+        },
+        {
+          "key": "h",
+          "label": "<- cb_h",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh h"
+        },
+        {
+          "key": "i",
+          "label": "<- cb_i",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh i"
+        },
+        {
+          "key": "j",
+          "label": "<- cb_j",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh j"
+        },
+        {
+          "key": "k",
+          "label": "<- cb_k",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh k"
+        },
+        {
+          "key": "l",
+          "label": "<- cb_l",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh l"
+        },
+        {
+          "key": "m",
+          "label": "<- cb_m",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh m"
+        },
+        {
+          "key": "n",
+          "label": "<- cb_n",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh n"
+        },
+        {
+          "key": "o",
+          "label": "<- cb_o",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh o"
+        },
+        {
+          "key": "p",
+          "label": "<- cb_p",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh p"
+        },
+        {
+          "key": "q",
+          "label": "<- cb_q",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh q"
+        },
+        {
+          "key": "r",
+          "label": "<- cb_r",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh r"
+        },
+        {
+          "key": "s",
+          "label": "<- cb_s",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh s"
+        },
+        {
+          "key": "t",
+          "label": "<- cb_t",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh t"
+        },
+        {
+          "key": "u",
+          "label": "<- cb_u",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh u"
+        },
+        {
+          "key": "v",
+          "label": "<- cb_v",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh v"
+        },
+        {
+          "key": "w",
+          "label": "<- cb_w",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh w"
+        },
+        {
+          "key": "x",
+          "label": "<- cb_x",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh x"
+        },
+        {
+          "key": "y",
+          "label": "<- cb_y",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh y"
+        },
+        {
+          "key": "z",
+          "label": "<- cb_z",
+          "type": "command",
+          "value": "$HOME/.local/bin/lk-paste.sh z"
+        },
+        {
+          "key": "?",
+          "label": "Show all",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'"
+        }
       ],
-      "iconPath" : "doc.on.clipboard.fill",
-      "key" : "p",
-      "label" : "Paste from register",
-      "type" : "group"
+      "iconPath": "doc.on.clipboard.fill",
+      "key": "p",
+      "label": "Paste from register",
+      "type": "group"
     },
     {
-      "actions" : [
-        { "key" : "l", "label" : "List all registers", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'" },
-        { "key" : "n", "label" : "Sync from Neovim", "type" : "command", "value" : "/opt/homebrew/bin/hs -c 'clipboard.nvim.pickSocket(function(s) for l in (\"abcdefghijklmnopqrstuvwxyz\"):gmatch(\".\") do local c = clipboard.nvim.queryRegister(s, l); if c and c ~= \"\" then os.execute(clipboard.config.cbPath .. \" copy_\" .. l .. \" \\\"\" .. c:gsub(\"\\\"\",\"\\\\\\\\\\\"\") .. \"\\\"\") end end; hs.alert.show(\"Synced nvim registers\") end)'" }
+      "actions": [
+        {
+          "key": "l",
+          "label": "List all registers",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.picker.showRegisters()'"
+        },
+        {
+          "key": "n",
+          "label": "Sync from Neovim",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'clipboard.nvim.pickSocket(function(s) for l in (\"abcdefghijklmnopqrstuvwxyz\"):gmatch(\".\") do local c = clipboard.nvim.queryRegister(s, l); if c and c ~= \"\" then os.execute(clipboard.config.cbPath .. \" copy_\" .. l .. \" \\\"\" .. c:gsub(\"\\\"\",\"\\\\\\\\\\\"\") .. \"\\\"\") end end; hs.alert.show(\"Synced nvim registers\") end)'"
+        }
       ],
-      "iconPath" : "list.clipboard",
-      "key" : "r",
-      "label" : "Register mgmt",
-      "type" : "group"
+      "iconPath": "list.clipboard",
+      "key": "r",
+      "label": "Register mgmt",
+      "type": "group"
     }
   ],
-  "type" : "group"
+  "type": "group"
 }

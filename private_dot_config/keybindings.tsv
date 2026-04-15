@@ -96,6 +96,8 @@ leader	leader m m	toggle mic
 leader	leader m n	clear notifications
 leader	leader m b	go to claude notification
 leader	leader m k	force quit dialog
+leader	leader m d s	open slackdump-sync log in nvim (alacritty)
+leader	leader m d k	open krisp-sync log in nvim (alacritty)
 leader	leader m /	search keybindings
 leader	leader k	window picker across all aerospace workspaces
 leader	leader c h	clipboard history picker
