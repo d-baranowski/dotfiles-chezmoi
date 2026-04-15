@@ -49,6 +49,14 @@ def parse_ts(s):
     except Exception:
         return None
 now = time.time()
+# Prompts used by claude-recap-gen.py. Sessions whose first user message
+# starts with one of these are ephemeral recap-generator calls that haven't
+# been cleaned up yet (the generator deletes them post-hoc, but there's a
+# 5–7s window during the Haiku call where they'd otherwise clog the list).
+RECAP_PROMPT_PREFIXES = (
+    'Summarize this Claude Code session in ONE',
+    'You previously summarised a Claude Code session',
+)
 for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
     sid = os.path.basename(jsonl).replace('.jsonl', '')
     if sid.startswith('agent-'):
@@ -83,6 +91,9 @@ for jsonl in glob.glob(os.path.join(base, '**', '*.jsonl'), recursive=True):
                         last_usage = u
     except Exception:
         pass
+    # Skip ephemeral recap-generator sessions regardless of deletion state.
+    if any(first_msg.startswith(p) for p in RECAP_PROMPT_PREFIXES):
+        continue
     # Prefer the LLM-generated recap sidecar if present — written by
     # claude-recap-gen.py. Falls back to first user message otherwise.
     recap_label = ''
