@@ -163,11 +163,19 @@ def main():
         # (b) grab the session_id so we can delete the ephemeral session file
         # that claude -p creates. Without deletion, every recap invocation
         # clutters the TV channel with a throwaway session.
+        #
+        # CLAUDE_RECAP_GEN=1 is inherited by the spawned claude process and any
+        # hooks it fires. The Stop hook checks for this var and no-ops —
+        # without it, Stop on the ephemeral recap session would spawn another
+        # recap-gen, another claude -p, and so on: a fork-bomb of API calls.
+        env = dict(os.environ)
+        env["CLAUDE_RECAP_GEN"] = "1"
         result = subprocess.run(
             ["claude", "-p", "--output-format", "json", prompt],
             capture_output=True,
             text=True,
             timeout=CLAUDE_TIMEOUT,
+            env=env,
         )
         out = (result.stdout or "").strip()
         recap = ""
