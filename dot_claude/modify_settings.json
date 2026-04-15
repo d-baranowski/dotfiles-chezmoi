@@ -4,12 +4,17 @@
 # Claude Code owns this file and rewrites it at runtime (model selection, UI
 # toggles, etc.), so we cannot manage it as a regular chezmoi file. Instead,
 # this script reads the current target on stdin and emits the same JSON with
-# our `statusLine` key injected (or overwritten) — all other keys Claude has
-# written are preserved via jq's recursive-merge operator (`*`).
+# our managed keys injected (or overwritten) — all other keys Claude has
+# written are preserved.
 #
-# Why statusLine lives here and not in settings.local.json: on this install,
-# a statusLine block in settings.local.json is silently ignored. See the
-# EXCEPTION note in CLAUDE.md.
+# Managed keys:
+#   - statusLine:  points at our chezmoi-managed renderer. Lives here and not
+#                  in settings.local.json because, on this install, a
+#                  statusLine block there is silently ignored (see CLAUDE.md).
+#   - hooks.Stop:  appends our session-recap regenerator. Idempotent: any
+#                  previous entry referencing the same script is filtered out
+#                  before append, so repeated applies don't duplicate it.
+#                  Other Stop-hook entries are preserved untouched.
 #
 # This script must be byte-stable for unchanged inputs — otherwise every
 # `chezmoi apply` would show a diff.
@@ -21,9 +26,24 @@ if [ -z "$input" ]; then
   input='{}'
 fi
 
-printf '%s' "$input" | jq '. * {
-  statusLine: {
-    type: "command",
-    command: "~/.claude/statusline/statusline.sh"
-  }
-}'
+RECAP_HOOK_CMD='$HOME/.claude/hooks/regen-session-recap.sh'
+
+printf '%s' "$input" | jq --arg recap "$RECAP_HOOK_CMD" '
+  (. * {
+    statusLine: {
+      type: "command",
+      command: "~/.claude/statusline/statusline.sh"
+    }
+  })
+  | .hooks = (.hooks // {})
+  | .hooks.Stop = (
+      ((.hooks.Stop // [])
+       | map(select(
+           (.hooks // [])
+           | map(.command // "")
+           | any(. == $recap)
+           | not
+         )))
+      + [{hooks: [{type: "command", command: $recap}]}]
+    )
+'

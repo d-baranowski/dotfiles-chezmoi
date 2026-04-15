@@ -32,6 +32,10 @@ PER_TURN_CHARS = 500      # truncate each turn to keep the prompt bounded
 MAX_TRANSCRIPT = 8000     # hard cap on the transcript block
 MAX_RECAP_CHARS = 200
 CLAUDE_TIMEOUT = 90       # seconds
+# When a prior recap exists, skip the LLM call unless the jsonl has grown
+# by at least this much. Mirrors STALENESS_BYTES in claude-session-preview.py.
+# Lets the Stop hook fire eagerly without burning a Haiku call every turn.
+MIN_GROWTH_BYTES = 2000
 
 INITIAL_PROMPT = (
     "Summarize this Claude Code session in ONE short sentence "
@@ -127,9 +131,15 @@ def main():
 
         if prior:
             prior_turn_count = int(prior.get("turn_count") or 0)
+            prior_size = int(prior.get("jsonl_size") or 0)
             new_turns = all_turns[prior_turn_count:]
             if not new_turns:
                 # Nothing new — just refresh the metadata so we stop re-firing.
+                _write_recap(recap_path, prior["recap"], st, turn_count)
+                return
+            if st.st_size - prior_size < MIN_GROWTH_BYTES:
+                # Not enough new material to justify a Haiku call. Refresh
+                # metadata (keeps turn_count current) and keep the recap.
                 _write_recap(recap_path, prior["recap"], st, turn_count)
                 return
             # Cap new-turn transcript the same way we cap cold generation.
