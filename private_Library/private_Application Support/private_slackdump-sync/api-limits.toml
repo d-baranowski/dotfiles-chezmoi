@@ -1,0 +1,26 @@
+# Conservative API limits to avoid Slack 429 rate limiting.
+# Default config generated via `slackdump config new`, then tuned down.
+# workers=1 serialises all HTTP calls; reduced burst keeps us well
+# under Slack's per-method ceilings.
+workers = 1
+download_retries = 3
+
+[tier_2]
+  boost = 10
+  burst = 1
+  retries = 20
+
+[tier_3]
+  boost = 30
+  burst = 2
+  retries = 3
+
+[tier_4]
+  boost = 10
+  burst = 3
+  retries = 3
+
+[per_request]
+  conversations = 100
+  channels = 100
+  replies = 200

@@ -33,6 +33,8 @@ COG_DIR="$BASE_DIR/cognite"
 LAST_REFRESH_FILE="$BASE_DIR/.last-refresh-dms"
 REFRESH_GATE_SECONDS=14400   # 4 hours
 NEW_CHAN_LOOKBACK="p10y"     # deep enough to capture full DM history
+API_CONFIG="$BASE_DIR/api-limits.toml"
+INTER_CALL_DELAY=1.5         # seconds between slackdump invocations
 
 # Rendered markdown lives OUTSIDE ~/Documents/ to sidestep macOS TCC
 # restrictions on launchd-spawned processes. Vault symlink:
@@ -79,10 +81,11 @@ trap on_exit EXIT
 # caller can short-circuit the rest of the sync.
 run_slackdump() {
   local label="$1"; shift
+  local subcmd="$1"; shift
   local out; out=$(mktemp)
   local rc=0
   set +e
-  slackdump "$@" 2>&1 | tee "$out"
+  slackdump "$subcmd" -api-config "$API_CONFIG" "$@" 2>&1 | tee "$out"
   rc=${PIPESTATUS[0]}
   set -e
   # Rate-limit detection. slackdump prints these phrasings on 429:
@@ -164,6 +167,7 @@ if should_refresh; then
       [[ -z "$cid" ]] && continue
       if is_dm_or_mpim "$DMS_DIR/slackdump.sqlite" "$cid"; then
         echo "[$(date '+%F %T')] Backfilling full history for new DM: $cid"
+        sleep "$INTER_CALL_DELAY"
         run_slackdump "dms-backfill-$cid" resume -workspace "$WORKSPACE" \
           -lookback "$NEW_CHAN_LOOKBACK" "$DMS_DIR" "$cid" \
           || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
@@ -177,6 +181,9 @@ else
   run_slackdump "dms-resume" resume -workspace "$WORKSPACE" "$DMS_DIR" \
     || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
 fi
+
+# Pause between archives to stay under Slack rate limits.
+sleep "$INTER_CALL_DELAY"
 
 # Cognite: plain resume, never refreshed.
 run_slackdump "cognite-resume" resume -workspace "$WORKSPACE" "$COG_DIR" \
