@@ -541,7 +541,7 @@
                         ]
                     },
                     {
-                        "description": "Option(Alt)+Tab as Switch Application (Command+Tab)",
+                        "description": "Option(Alt)+Tab as Aerospace Window Picker",
                         "manipulators": [
                             {
                                 "from": {
@@ -553,8 +553,7 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "tab",
-                                        "modifiers": ["left_command"]
+                                        "shell_command": "/opt/homebrew/bin/hs -c 'workspaces.showWindowPicker()'"
                                     }
                                 ],
                                 "type": "basic"
@@ -3471,7 +3470,7 @@
                         ]
                     },
                     {
-                        "description": "Option(Alt)+Tab as Switch Application (Command+Tab)",
+                        "description": "Option(Alt)+Tab as Aerospace Window Picker",
                         "manipulators": [
                             {
                                 "from": {
@@ -3483,8 +3482,7 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "tab",
-                                        "modifiers": ["left_command"]
+                                        "shell_command": "/opt/homebrew/bin/hs -c 'workspaces.showWindowPicker()'"
                                     }
                                 ],
                                 "type": "basic"
@@ -6401,7 +6399,7 @@
                         ]
                     },
                     {
-                        "description": "Option(Alt)+Tab as Switch Application (Command+Tab)",
+                        "description": "Option(Alt)+Tab as Aerospace Window Picker",
                         "manipulators": [
                             {
                                 "from": {
@@ -6413,8 +6411,7 @@
                                 },
                                 "to": [
                                     {
-                                        "key_code": "tab",
-                                        "modifiers": ["left_command"]
+                                        "shell_command": "/opt/homebrew/bin/hs -c 'workspaces.showWindowPicker()'"
                                     }
                                 ],
                                 "type": "basic"
