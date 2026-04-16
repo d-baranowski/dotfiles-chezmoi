@@ -675,22 +675,52 @@
         {
           "actions": [
             {
-              "key": "e",
-              "label": "paste cb_email",
+              "key": "g",
+              "label": "daniel.m.baranowski@gmail.com",
               "type": "command",
-              "value": "$HOME/.local/bin/lk-paste.sh email"
+              "value": "echo -n 'daniel.m.baranowski@gmail.com' | pbcopy"
+            },
+            {
+              "key": "p",
+              "label": "dan.baranowski@parall.ax",
+              "type": "command",
+              "value": "echo -n 'dan.baranowski@parall.ax' | pbcopy"
+            },
+            {
+              "key": "c",
+              "label": "dan.baranowski@cognite.com",
+              "type": "command",
+              "value": "echo -n 'dan.baranowski@cognite.com' | pbcopy"
+            },
+            {
+              "key": "n",
+              "label": "NIP 6783214096",
+              "type": "command",
+              "value": "echo -n '6783214096' | pbcopy"
+            },
+            {
+              "key": "r",
+              "label": "REGON 527632485",
+              "type": "command",
+              "value": "echo -n '527632485' | pbcopy"
+            },
+            {
+              "key": "l",
+              "label": "PL +48 725780976",
+              "type": "command",
+              "value": "echo -n '+48725780976' | pbcopy"
+            },
+            {
+              "key": "u",
+              "label": "UK +44 7538587084",
+              "type": "command",
+              "value": "echo -n '+447538587084' | pbcopy"
             },
             {
               "key": "s",
-              "label": "paste cb_sig",
+              "label": "PESEL 94062915011",
               "type": "command",
-              "value": "$HOME/.local/bin/lk-paste.sh sig"
-            },
-            {
-              "key": "a",
-              "label": "paste cb_addr",
-              "type": "command",
-              "value": "$HOME/.local/bin/lk-paste.sh addr"
+              "value": "echo -n '94062915011' | pbcopy"
             }
           ],
           "key": "n",

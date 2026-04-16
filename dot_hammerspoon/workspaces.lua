@@ -6,7 +6,13 @@ local M = {}
 
 local AEROSPACE = "/opt/homebrew/bin/aerospace"
 
+M._prevWorkspace = nil
+
 local function trim(s) return (s:gsub("^%s*(.-)%s*$", "%1")) end
+
+function M.setPrevWorkspace(ws)
+  M._prevWorkspace = ws
+end
 
 function M.showWindowPicker()
   hs.task.new(AEROSPACE, function(exitCode, stdout, stderr)
@@ -30,22 +36,27 @@ function M.showWindowPicker()
           color = { white = 0.8 },
         })
         table.insert(choices, {
-          text     = string.format("[%s]  %s", trim(ws), appName),
-          subText  = styledTitle,
-          image    = icon,
-          windowId = trim(id),
+          text      = string.format("[%s]  %s", trim(ws), appName),
+          subText   = styledTitle,
+          image     = icon,
+          windowId  = trim(id),
+          workspace = trim(ws),
         })
       end
     end
 
+    local prev = M._prevWorkspace
     table.sort(choices, function(a, b)
+      local aPrev = prev and a.workspace == prev
+      local bPrev = prev and b.workspace == prev
+      if aPrev ~= bPrev then return aPrev end
       if a.text == b.text then return (a.subText or "") < (b.subText or "") end
       return a.text < b.text
     end)
 
-    -- Quick-action: open a new Chrome window
+    -- Quick-action: open a new Chrome window (at the end)
     local chromeIcon = hs.image.imageFromAppBundle("com.google.Chrome")
-    table.insert(choices, 1, {
+    table.insert(choices, {
       text     = "+ New Chrome Window",
       subText  = hs.styledtext.new("Open a fresh Google Chrome window", {
         font  = { size = 14 },
