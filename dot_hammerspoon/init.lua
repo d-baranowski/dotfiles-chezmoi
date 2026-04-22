@@ -40,6 +40,15 @@ if not ok4 then
   print("Ratelimit module error: " .. tostring(err4))
 end
 
+-- stopwatch: small bottom-right overlay, driven by Leader Key (group "x")
+local ok5, err5 = pcall(function()
+  stopwatch = require("stopwatch")
+end)
+if not ok5 then
+  hs.alert.show("Stopwatch module error: " .. tostring(err5))
+  print("Stopwatch module error: " .. tostring(err5))
+end
+
 -- calendar: important-calendar picker + upcoming-events popups.
 -- Watcher polls Calendar.app every 60s and alerts at 15/5/1 min before each
 -- event on a selected-important calendar.
@@ -50,6 +59,16 @@ end)
 if not ok6 then
   hs.alert.show("Calendar module error: " .. tostring(err6))
   print("Calendar module error: " .. tostring(err6))
+end
+
+-- pass(1) integration: secret copy (concealed, no history) + add, under
+-- Leader Key group "c → P".
+local ok7, err7 = pcall(function()
+  pass = require("pass")
+end)
+if not ok7 then
+  hs.alert.show("Pass module error: " .. tostring(err7))
+  print("Pass module error: " .. tostring(err7))
 end
 
 -- shift+f6 → go to most recent Claude notification (same as bell click)

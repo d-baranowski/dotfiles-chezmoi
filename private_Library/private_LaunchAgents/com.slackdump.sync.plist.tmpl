@@ -5,23 +5,38 @@
     <key>Label</key>
     <string>com.slackdump.sync</string>
 
+    <!-- Disabled 2026-04-19: recurring 429 rate-limit hits under investigation.
+         Re-enable by removing the Disabled key (or setting it to false) and
+         running `chezmoi apply -v` followed by `launchctl bootstrap gui/$UID
+         ~/Library/LaunchAgents/com.slackdump.sync.plist`. Logs at
+         ~/Library/Logs/slackdump-sync.log are retained for review. -->
+    <key>Disabled</key>
+    <true/>
+
     <key>ProgramArguments</key>
     <array>
         <string>{{ .chezmoi.homeDir }}/.local/bin/slackdump-sync</string>
     </array>
 
-    <!-- Fire hourly between 07:00 and 19:00 local, inclusive (13 runs/day).
-         Nothing meaningful happens on the tracked Slack workspace outside
-         working hours, so there's no point paying the API + audit-log
-         cost of syncing at night. launchd entirely skips the job outside
-         the scheduled hours — no early-exit guard needed in the script.
+    <!-- Fire hourly between 07:30 and 19:00 local working hours (13 runs/day).
+         The first run is at 07:30, not 07:00, because the Slack desktop
+         client bursts conversations.history calls when the laptop wakes
+         at the start of the workday — slackdump shares the per-user
+         rate-limit pool with the client (session-token auth), so a :00
+         sync collides with that burst and trips 429s. By :30 the client
+         has settled. Subsequent runs stay at the top of the hour.
+
+         Nothing meaningful happens outside working hours, so there's no
+         point paying the API cost of syncing at night. launchd entirely
+         skips the job outside the scheduled slots — no early-exit guard
+         needed in the script.
 
          Intentionally NOT RunAtLoad: reloading the agent must not
          trigger an unscheduled Slack API call. To force a run outside
          hours, invoke ~/.local/bin/slackdump-sync directly. -->
     <key>StartCalendarInterval</key>
     <array>
-        <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>30</integer></dict>
         <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>10</integer><key>Minute</key><integer>0</integer></dict>

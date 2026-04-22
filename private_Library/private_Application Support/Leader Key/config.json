@@ -634,12 +634,6 @@
               "value": "/Applications/Alacritty.app/Contents/MacOS/alacritty --title 'krisp-sync.log' -e nvim +'setlocal autoread' +'autocmd CursorHold * checktime' +'set updatetime=1000' $HOME/Library/Logs/krisp-sync.log"
             }
           ]
-        },
-        {
-          "key": "/",
-          "label": "search keybindings",
-          "type": "command",
-          "value": "/opt/homebrew/bin/hs -c 'keybindings.picker.show()'"
         }
       ],
       "key": "m",
@@ -671,6 +665,50 @@
           "value": "/opt/homebrew/bin/hs -c 'calendar.toggleWatcher()'"
         }
       ]
+    },
+    {
+      "actions": [
+        {
+          "key": "s",
+          "label": "start",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'stopwatch.start()'"
+        },
+        {
+          "key": "x",
+          "label": "stop (pause)",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'stopwatch.stop()'"
+        },
+        {
+          "key": "r",
+          "label": "reset",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'stopwatch.reset()'"
+        },
+        {
+          "key": "t",
+          "label": "toggle start/stop",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'stopwatch.toggle()'"
+        },
+        {
+          "key": "h",
+          "label": "hide overlay",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'stopwatch.hide()'"
+        }
+      ],
+      "iconPath": "stopwatch",
+      "key": "t",
+      "label": "Stopwatch (timer)",
+      "type": "group"
+    },
+    {
+      "key": "/",
+      "label": "search keybindings",
+      "type": "command",
+      "value": "/opt/homebrew/bin/hs -c 'keybindings.picker.show()'"
     },
     {
       "actions": [
@@ -747,10 +785,42 @@
               "label": "PESEL 94062915011",
               "type": "command",
               "value": "echo -n '94062915011' | pbcopy"
+            },
+            {
+              "key": "a",
+              "label": "Go map[byte]bool alphanumeric",
+              "type": "command",
+              "value": "echo -n \"map[byte]bool{\n    'a': true, 'b': true, 'c': true, 'd': true, 'e': true,\n    'f': true, 'g': true, 'h': true, 'i': true, 'j': true,\n    'k': true, 'l': true, 'm': true, 'n': true, 'o': true,\n    'p': true, 'q': true, 'r': true, 's': true, 't': true,\n    'u': true, 'v': true, 'w': true, 'x': true, 'y': true,\n    'z': true,\n    'A': true, 'B': true, 'C': true, 'D': true, 'E': true,\n    'F': true, 'G': true, 'H': true, 'I': true, 'J': true,\n    'K': true, 'L': true, 'M': true, 'N': true, 'O': true,\n    'P': true, 'Q': true, 'R': true, 'S': true, 'T': true,\n    'U': true, 'V': true, 'W': true, 'X': true, 'Y': true,\n    'Z': true,\n    '0': true, '1': true, '2': true, '3': true, '4': true,\n    '5': true, '6': true, '7': true, '8': true, '9': true,\n}\" | pbcopy"
             }
           ],
           "key": "n",
           "label": "Snippets",
+          "type": "group"
+        },
+        {
+          "actions": [
+            {
+              "key": "c",
+              "label": "copy secret (picker)",
+              "type": "command",
+              "value": "/opt/homebrew/bin/hs -c 'pass.pick()'"
+            },
+            {
+              "key": "a",
+              "label": "add new secret",
+              "type": "command",
+              "value": "/opt/homebrew/bin/hs -c 'pass.add()'"
+            },
+            {
+              "key": "d",
+              "label": "delete secret (picker + confirm)",
+              "type": "command",
+              "value": "/opt/homebrew/bin/hs -c 'pass.remove()'"
+            }
+          ],
+          "iconPath": "key",
+          "key": "P",
+          "label": "Pass (secrets)",
           "type": "group"
         }
       ],

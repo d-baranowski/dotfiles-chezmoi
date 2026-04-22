@@ -131,13 +131,37 @@ karabiner	ctrl-x	cut (non-terminal apps)
 
 hammerspoon	shift-f6	go to claude notification
 hammerspoon	cmd-alt-v	clipboard history picker
+hammerspoon	ctrl-alt-h	clipboard history picker
 hammerspoon	cmd-alt-shift-v	clipboard registers picker
 
 # ── neovim (lazyvim base) ───────────────────────────────────────
+# Leader is <space>. Line numbers: absolute only (relativenumber = off).
 
 nvim	jj (insert)	escape to normal mode
 nvim	jk (insert)	escape to normal mode
 nvim	shift-q (normal)	open neotree file explorer
+nvim	leader u G (normal)	toggle go raw mode (disable gopls/diagnostics/inlay hints/completion/copilot; syntax only)
+# LazyVim defaults worth remembering
+nvim	leader <space>	find files (root dir)
+nvim	leader ff	find files (cwd)
+nvim	leader sg	grep (live)
+nvim	leader sw	grep word under cursor
+nvim	leader e	toggle neotree
+nvim	leader bb	switch to last buffer
+nvim	leader bd	delete buffer
+nvim	leader gg	open lazygit (root)
+nvim	leader qq	quit all
+nvim	leader uf	toggle format-on-save
+nvim	leader uw	toggle line wrap
+nvim	leader un	dismiss all notifications
+nvim	] d / [ d	next/prev diagnostic
+nvim	K	hover docs
+nvim	gd / gr	goto definition / references
+nvim	leader ca	code action
+nvim	leader cr	rename symbol
+nvim	ctrl-h/j/k/l	navigate windows (lazyvim)
+nvim	leader -	split window horizontal
+nvim	leader |	split window vertical
 
 # ── vscode ──────────────────────────────────────────────────────
 
@@ -157,15 +181,30 @@ ideavim	w (normal)	next diagnostic
 ideavim	e (normal)	prev diagnostic
 ideavim	b (normal)	prev buffer diagnostic
 
-# ── vim ─────────────────────────────────────────────────────────
+# ── vim (plain vim, ~/.vimrc) ──────────────────────────────────
+# Leader is <space>. Clipboard = unnamedplus (y/p use system clipboard by default).
 
-vim	space w	save file
-vim	space q	quit
-vim	space r (visual)	select register for paste
-vim	space y (visual)	copy to system clipboard
-vim	space p	paste from register
-vim	space x	paste from register (alt)
+vim	space w	save file (:w)
+vim	space q	quit (:q)
+vim	space r (normal/visual)	start register selector (" prefix)
+vim	space y (normal/visual)	yank to + (system clipboard)
+vim	space p	paste from "0 (last yank, not overwritten by delete)
+vim	space x	paste from "1 (last delete)
 vim	esc (normal)	clear search highlight
+vim	j / k (normal)	move by visual line (gj/gk, wrap-aware)
+# personalization-adjacent basics
+vim	"{reg}y / "{reg}p	yank/paste with explicit register
+vim	"+y / "+p	yank/paste system clipboard explicitly
+vim	"0p	paste most recent yank (survives deletes)
+vim	:reg	list all registers
+vim	ctrl-r {reg} (insert)	insert register contents at cursor
+vim	ciw / daw	change/delete inner/around word
+vim	gv	reselect last visual selection
+vim	. (normal)	repeat last change
+vim	u / ctrl-r	undo / redo
+vim	:e <file>	edit file
+vim	:bn / :bp / :bd	next / prev / delete buffer
+vim	:sp / :vsp	horizontal / vertical split
 
 # ── alacritty ───────────────────────────────────────────────────
 
@@ -202,23 +241,79 @@ zsh	ctrl-t	television smart autocomplete
 zsh	ctrl-r	command history (television)
 zsh	set -o vi	vi keybindings in shell
 zsh	j <dir>	zoxide jump to directory
-zsh	ga	git add
-zsh	gs	git status
-zsh	g	git
-zsh	br	git branch
-zsh	gco	git checkout
-zsh	gc	git commit
-zsh	gpl	git pull
-zsh	gps	git push
-zsh	gl	git log --oneline
-zsh	dcu	docker compose up -d
-zsh	dcd	docker compose down
-zsh	tf	terraform
-zsh	kg	kubectl get
-zsh	ka	kubectl apply
-zsh	kc	kubectx
-zsh	vim	nvim (alias)
-zsh	search	ripgrep (alias)
+
+# ── shell aliases (dot_aliases) ────────────────────────────────
+
+# git
+alias	g	git
+alias	ga	git add -p
+alias	gs	git status
+alias	gb	git branch
+alias	br	git branch
+alias	gco	git checkout
+alias	gcob	git checkout -b
+alias	gc "msg"	git commit -m
+alias	gcm "msg"	git commit -m
+alias	gl	git log
+alias	gpl	git pull
+alias	gps	git push
+alias	pull	git pull
+alias	push	git push
+alias	status	git status
+alias	cf	git diff --name-only
+alias	changed-files	git diff --name-only
+alias	cleanbranches	delete all branches except master/main
+alias	master	checkout master, pull, stash
+alias	main	checkout main, pull, stash
+alias	gobck	git checkout HEAD~ (back one commit)
+alias	gofwd <ref>	step forward toward ref in history
+alias	bstack [N]	recent branch checkout stack (reflog)
+alias	gitignore <pat>	append pattern to .gitignore
+
+# editors / tools
+alias	vim	nvim
+alias	ovim	original vim (\vim)
+alias	clr	clear
+alias	search	ack
+alias	diff	code -d (VS Code diff)
+alias	hist <pat>	grep shell history
+
+# docker
+alias	dcu	docker compose up
+alias	dcud	docker compose up -d
+alias	dcd	docker compose down --volumes --remove-orphans
+alias	docker-slay	kill all running containers
+alias	docker-clean	remove all containers + images
+alias	docker-bash <img>	run image with bash entrypoint
+
+# kubernetes
+alias	kg	kubectl get
+alias	ka	kubectl apply
+alias	kc	kubectl
+alias	kcg <kind> <pat>	kubectl get across namespaces, rg-filter
+alias	kcSecret <name>	decode secret values (base64)
+alias	kcCert <name>	decode tls.crt and openssl x509 -text
+alias	kcKillPods <pat>	delete pods matching pattern
+alias	kcReset <ns>	rolling restart via env bump
+alias	kc-logs <ns>	kail + filter-logs + jq
+alias	copy-secret NAME FROM TO	copy secret between namespaces
+alias	dbpod	first pod name in external ns
+
+# aws / infra
+alias	tf	terraform
+alias	awslocal	aws --endpoint-url=http://localhost:4566
+alias	ssm <pat>	find/get SSM parameters (decrypted)
+alias	ssmCert <name>	fetch SSM cert and openssl x509 -text
+alias	vlt <path> [field]	vault list/read helper
+alias	bucket-size <s3>	recursive human-readable s3 ls
+
+# filesystem / misc
+alias	up <N>	cd up N directories
+alias	unpack <file>	extract any archive by extension
+alias	unzipAll	unzip all *.zip into named dirs
+alias	splitchain <pem>	split PEM chain into cert-NN files
+alias	free-port <port>	kill whatever holds the port
+alias	jsonArraySplit <in> <prefix>	split JSON array file into per-element files
 
 # ── sketchybar (click actions) ──────────────────────────────────
 
@@ -249,10 +344,6 @@ tv-claude	ctrl-t	sort by last-modified (desc) — overrides toggle_layout here
 tv-claude	ctrl-n	sort by session created date (desc)
 tv-claude	ctrl-p	sort by project name (A–Z)
 tv-claude	(auto)	sort changes from ctrl-x action picker propagate within ~2s via watch
-
-# ── claude code ─────────────────────────────────────────────────
-
-claude-code	shift-f5	push to talk (voice)
 
 # ── google chrome ───────────────────────────────────────────────
 

@@ -12,6 +12,10 @@ function M.start()
     M.picker.showHistory()
   end)
 
+  hs.hotkey.bind({ "ctrl", "alt" }, "h", function()
+    M.picker.showHistory()
+  end)
+
   hs.hotkey.bind({ "cmd", "alt", "shift" }, "v", function()
     M.picker.showRegisters()
   end)

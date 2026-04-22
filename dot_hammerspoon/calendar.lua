@@ -195,6 +195,7 @@ local LEAD_MINUTES      = { 15, 5, 1 }  -- alert thresholds before event start
 local POLL_SECONDS      = 60            -- watcher poll cadence
 local WATCH_HORIZON_MIN = 20            -- events further than this are ignored per tick
 local SHOW_HORIZON_MIN  = 24 * 60       -- showUpcoming default lookahead
+local PAST_BUFFER_MIN   = 30            -- keep "just missed" events at the top
 local CACHE_PATH        = os.getenv("HOME") .. "/Library/Caches/hammerspoon-calendar-events.json"
 
 local watchTimer    = nil
@@ -228,13 +229,21 @@ function M.getUpcoming(horizonMin, callback)
 
   local now = os.time()
   local horizonSec = horizonMin * 60
+  local pastBufSec = PAST_BUFFER_MIN * 60
   local out = {}
   for _, ev in ipairs(data.events) do
     local startEpoch = tonumber(ev.startEpoch) or 0
+    local endEpoch   = tonumber(ev.endEpoch) or startEpoch
     local secs = startEpoch - now
-    if secs >= -60 and secs <= horizonSec then
+    -- Include if:
+    --   • just-missed / upcoming window: start is within [-PAST_BUFFER, +horizon], OR
+    --   • still in progress: started earlier but hasn't ended yet
+    local inWindow = secs >= -pastBufSec and secs <= horizonSec
+    local ongoing  = startEpoch <= now and endEpoch > now
+    if inWindow or ongoing then
       if (not filterOn) or importantSet[ev.calendar or ""] then
         ev.secondsUntilStart = secs
+        ev.isOngoing = (startEpoch <= now and endEpoch > now)
         table.insert(out, ev)
       end
     end
@@ -315,14 +324,23 @@ function M.toggleWatcher()
 end
 
 local function fmtCountdown(secs)
-  if secs < 0 then return "now" end
-  if secs < 60 then return secs .. "s" end
-  local m = math.floor(secs / 60)
-  if m < 60 then return m .. "m" end
-  local h = math.floor(m / 60)
-  local rem = m % 60
-  if rem == 0 then return h .. "h" end
-  return string.format("%dh %dm", h, rem)
+  if secs >= -30 and secs < 60 then return "now" end
+  local past = secs < 0
+  local abs  = math.abs(secs)
+  local out
+  if abs < 60 then
+    out = abs .. "s"
+  else
+    local m = math.floor(abs / 60)
+    if m < 60 then
+      out = m .. "m"
+    else
+      local h = math.floor(m / 60)
+      local rem = m % 60
+      out = (rem == 0) and (h .. "h") or string.format("%dh %dm", h, rem)
+    end
+  end
+  return past and ("-" .. out) or out
 end
 
 local function htmlEscape(s)
@@ -338,7 +356,14 @@ local function buildUpcomingHTML(events, err, horizonMin)
     local hasUrl = ev.url and ev.url ~= ""
     local iconTitle = hasUrl and "Open meeting link" or "Open in Calendar"
     local iconGlyph = hasUrl and "↗" or "◧"
-    local liClass = (i == 1) and "first" or ""
+    local liClasses = {}
+    if i == 1 then table.insert(liClasses, "first") end
+    if ev.isOngoing then
+      table.insert(liClasses, "ongoing")
+    elseif (ev.secondsUntilStart or 0) < 0 then
+      table.insert(liClasses, "past")
+    end
+    local liClass = table.concat(liClasses, " ")
     local jHint   = (i == 1) and '<kbd class="inline">j</kbd>' or ""
     table.insert(rows, string.format([[
 <li class="%s" data-idx="%d">
@@ -414,6 +439,12 @@ local function buildUpcomingHTML(events, err, horizonMin)
 
   /* Keyboard-shortcut visual cues */
   li.first { box-shadow: inset 2px 0 0 #89b4fa; }
+  /* Time-based cues */
+  li.past    .time { color: #6c7086; }             /* started ago, presumably ended */
+  li.past    .title { opacity: 0.7; }
+  li.ongoing { box-shadow: inset 2px 0 0 #a6e3a1; } /* green accent: in progress */
+  li.ongoing .time { color: #a6e3a1; }
+  li.first.ongoing { box-shadow: inset 2px 0 0 #a6e3a1, inset 4px 0 0 #89b4fa; }
   kbd { font-family: 'Menlo', ui-monospace, monospace; font-size: 10px;
         background: #313244; color: #cdd6f4; border: 1px solid #45475a;
         border-radius: 4px; padding: 1px 5px; line-height: 1;

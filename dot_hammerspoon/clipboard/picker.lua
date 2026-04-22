@@ -18,7 +18,7 @@ local function parseHistory()
   if not ok or not parsed then return {} end
 
   -- cb history returns {"0": {"date":..., "content":...}, "1": ...}
-  -- collect entries, sort by key (most recent first)
+  -- idx 0 is newest (== current clipboard). Sort newest-first.
   local entries = {}
   for key, entry in pairs(parsed) do
     if entry.content and type(entry.content) == "string" then
@@ -27,15 +27,20 @@ local function parseHistory()
   end
   table.sort(entries, function(a, b) return a.idx < b.idx end)
 
+  local current = hs.pasteboard.getContents()
+  local seen = {}
   local choices = {}
   for _, entry in ipairs(entries) do
-    local preview = entry.content:sub(1, config.maxPreviewChars)
-    if #entry.content > config.maxPreviewChars then preview = preview .. "..." end
-    table.insert(choices, {
-      text = preview:gsub("\n", " "),
-      subText = string.format("%d chars", #entry.content),
-      fullText = entry.content,
-    })
+    if entry.content ~= current and not seen[entry.content] then
+      seen[entry.content] = true
+      local preview = entry.content:sub(1, config.maxPreviewChars)
+      if #entry.content > config.maxPreviewChars then preview = preview .. "..." end
+      table.insert(choices, {
+        text = preview:gsub("\n", " "),
+        subText = string.format("%d chars", #entry.content),
+        fullText = entry.content,
+      })
+    end
   end
   return choices
 end

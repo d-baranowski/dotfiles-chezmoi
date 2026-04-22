@@ -4,3 +4,5 @@
 --
 vim.opt.wrap = true
 vim.opt.foldmethod = "manual"
+vim.opt.exrc = true
+vim.opt.relativenumber = false

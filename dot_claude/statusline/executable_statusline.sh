@@ -24,9 +24,6 @@ session_id=$(j '.session_id // "unknown"')
 model_id=$(j '.model.id // ""')
 model_name=$(j '.model.display_name // .model.id // "?"')
 cost=$(j '.total_cost_usd // 0')
-duration_ms=$(j '.total_duration_ms // 0')
-lines_added=$(j '.total_lines_added // 0')
-lines_removed=$(j '.total_lines_removed // 0')
 exceeds_200k=$(j '.exceeds_200k_tokens // false')
 
 ctx_in=$(j '.context_window.current_usage.input_tokens // 0')
@@ -176,18 +173,6 @@ fmt_tokens() {
   }'
 }
 
-fmt_duration() {
-  local ms=$1
-  local s=$(( ms / 1000 ))
-  if (( s >= 3600 )); then
-    printf '%dh %dm' $(( s / 3600 )) $(( (s % 3600) / 60 ))
-  elif (( s >= 60 )); then
-    printf '%dm' $(( s / 60 ))
-  else
-    printf '%ds' "$s"
-  fi
-}
-
 fmt_cache_remaining() {
   local elapsed=$(( now - cache_ts ))
   local remaining=$(( CACHE_TTL_SECS - elapsed ))
@@ -231,11 +216,11 @@ sep=" │ "
 line="${model_name} ${rate_card}"
 line+="${sep}$(fmt_cost "$cost")${delta_parts}"
 line+="${sep}${pct}% [${bar}]"
-line+="${sep}+${lines_added} -${lines_removed}"
-line+="${sep}$(fmt_duration "$duration_ms")"
 line+="${sep}$(fmt_cache_remaining)"
 if [[ "$exceeds_200k" == "true" ]]; then
   line+="${sep}!200k"
 fi
+# Timestamp of this render — i.e. when the last turn completed.
+line+="${sep}$(date +'%H:%M')"
 
 printf '%s' "$line"
