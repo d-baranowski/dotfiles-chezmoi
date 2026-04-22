@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.inspirationparticle.docker-sock-jenkins-acl</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>sleep 1; /bin/chmod +a "user:jenkins allow read,write" "$HOME/.docker/run/docker.sock" 2>/dev/null || true</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>/Users/danielbaranowski/.docker/run</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/docker-sock-jenkins-acl.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/docker-sock-jenkins-acl.log</string>
+</dict>
+</plist>
