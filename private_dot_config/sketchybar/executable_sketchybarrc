@@ -236,10 +236,12 @@ sketchybar --add item clock right \
   icon.color=$WHITE \
   icon.y_offset=-1 \
   label.color="$CAL_EVENT_LABEL_COLOR" \
+  label.y_offset=-1 \
   background.drawing=on \
   background.color="$CAL_EVENT_BG_COLOR" \
   background.corner_radius=8 \
-  background.height=25
+  background.height=25 \
+  --subscribe calendar_event display_change
 
 ##### Claude Code Notification Bell (right side, next to calendar) #####
 # Shows a bell icon that lights up when Claude needs attention.

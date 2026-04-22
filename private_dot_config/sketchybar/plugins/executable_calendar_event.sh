@@ -2,6 +2,32 @@
 
 source "$CONFIG_DIR/colors.sh"
 
+# Write shared events cache for Hammerspoon. Runs here because sketchybar has
+# Full Calendar Access granted; Hammerspoon.app lacks NSCalendarsFullAccessUsageDescription
+# and so can't read EventKit directly on macOS 14+.
+# Note: sketchybar only exports CONFIG_DIR to plugin children, not PLUGIN_DIR.
+CALENDAR_CACHE="$HOME/Library/Caches/hammerspoon-calendar-events.json"
+/opt/homebrew/bin/icalBuddy -sc -n -nc -ea -nrd \
+  -tf '%H:%M' -df '%Y-%m-%d' \
+  -iep 'title,datetime,location,url,notes' \
+  -b '§§' \
+  eventsToday+1 2>/dev/null | \
+  /usr/bin/python3 "$CONFIG_DIR/plugins/calendar_cache.py" "$CALENDAR_CACHE" 2>/dev/null
+
+# Restrict this item to external monitors only.
+# DirectDisplayID=1 is the Apple Silicon built-in panel; any other ID is external.
+# We output a comma-separated list of arrangement-ids for external displays, or
+# empty if the laptop panel is the only connected display.
+EXTERNAL_DISPLAYS=$(sketchybar --query displays 2>/dev/null | \
+  /usr/bin/jq -r '[.[] | select(.DirectDisplayID != 1) | .["arrangement-id"]] | join(",")')
+
+if [ -z "$EXTERNAL_DISPLAYS" ]; then
+  # No external monitor connected — hide the item entirely.
+  sketchybar --set "$NAME" drawing=off
+  exit 0
+fi
+sketchybar --set "$NAME" drawing=on display="$EXTERNAL_DISPLAYS"
+
 # Get upcoming timed events today (excluding all-day events)
 OUTPUT=$(icalBuddy -n -nc -npn -ea -li 10 -tf '%H:%M' -df '' -b '•' eventsToday 2>/dev/null)
 

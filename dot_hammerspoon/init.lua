@@ -40,6 +40,18 @@ if not ok4 then
   print("Ratelimit module error: " .. tostring(err4))
 end
 
+-- calendar: important-calendar picker + upcoming-events popups.
+-- Watcher polls Calendar.app every 60s and alerts at 15/5/1 min before each
+-- event on a selected-important calendar.
+local ok6, err6 = pcall(function()
+  calendar = require("calendar")
+  calendar.startWatcher()
+end)
+if not ok6 then
+  hs.alert.show("Calendar module error: " .. tostring(err6))
+  print("Calendar module error: " .. tostring(err6))
+end
+
 -- shift+f6 → go to most recent Claude notification (same as bell click)
 hs.hotkey.bind({"shift"}, "f6", function()
   hs.task.new(os.getenv("HOME") .. "/.config/sketchybar/plugins/claude_notify_goto.sh", nil):start()

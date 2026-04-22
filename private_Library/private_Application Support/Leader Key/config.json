@@ -647,6 +647,32 @@
       "type": "group"
     },
     {
+      "iconPath": "calendar",
+      "key": "e",
+      "label": "Events / Calendar",
+      "type": "group",
+      "actions": [
+        {
+          "key": "i",
+          "label": "pick important calendars",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'calendar.pickImportant()'"
+        },
+        {
+          "key": "u",
+          "label": "show upcoming events",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'calendar.showUpcoming()'"
+        },
+        {
+          "key": "w",
+          "label": "toggle reminder watcher",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'calendar.toggleWatcher()'"
+        }
+      ]
+    },
+    {
       "actions": [
         {
           "key": "h",
