@@ -111,6 +111,22 @@ leader	leader p {a-z}	paste from register
 leader	leader p ?	show all registers
 leader	leader r l	list all registers
 leader	leader r n	sync registers from neovim
+leader	leader l	last tmux session (toggle)
+leader	leader L	last aerospace workspace (toggle)
+leader	leader h	ask Haiku (floating one-shot prompt)
+leader	leader n	clear all notifications
+leader	leader N	click (activate) top notification
+
+# ── Ask Haiku window (floating popup from leader h) ────────────
+
+askhaiku	Enter	submit prompt (when input focused)
+askhaiku	Esc	close window
+askhaiku	y	copy last response to clipboard
+askhaiku	j / ↓	scroll response down
+askhaiku	k / ↑	scroll response up
+askhaiku	g	scroll to top
+askhaiku	G	scroll to bottom
+askhaiku	/	refocus input to ask again
 
 # ── karabiner (system-level remaps) ────────────────────────────
 
@@ -352,6 +368,10 @@ google-chrome	ctrl-shift-a	search open tabs (tab search)
 google-chrome	ctrl-l	focus url bar (omnibox)
 google-chrome	ctrl-shift-j	next tab (space held = shift: ctrl-space-j)
 google-chrome	ctrl-shift-k	previous tab (space held = shift: ctrl-space-k)
+
+# ── slack ───────────────────────────────────────────────────────
+
+slack	ctrl-k	focus command palette / quick switcher
 
 # ── finder / file picker (any macOS open/save dialog too) ──────
 

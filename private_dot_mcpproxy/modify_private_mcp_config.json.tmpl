@@ -1,0 +1,61 @@
+#!/bin/sh
+# Chezmoi modify_ script for ~/.mcpproxy/mcp_config.json.
+#
+# mcpproxy owns this file at runtime — it rewrites timestamps and may reorder
+# keys when it serialises. Our template at `.chezmoitemplates/mcpproxy_config.json`
+# is the authoritative source for the managed config.
+#
+# This script renders the template, then merges it over the live file such
+# that chezmoi does not fight mcpproxy on routine writes:
+#   1. Server list order is taken from the LIVE file, not the template, so
+#      mcpproxy's re-orderings survive.
+#   2. Within each managed server, the live field order is preserved (via
+#      jq's `*` recursive merge) — template values override, order does not.
+#   3. `created` / `updated` timestamps are pulled from live, not template.
+#   4. Any live server NOT present in the template is kept as-is (appended
+#      if you think of it positionally, but we iterate live so position is
+#      preserved) — so experimental servers added via the mcpproxy UI stay.
+#   5. New managed servers in the template but not yet live are appended.
+#
+# Workflow to add/edit a managed server:
+#   1. Edit .chezmoitemplates/mcpproxy_config.json
+#   2. git commit
+#   3. chezmoi apply   (this script runs; jq merges template + live state)
+
+set -eu
+
+TEMPLATE=$(cat <<'MCPPROXY_TEMPLATE_EOF'
+{{ template "mcpproxy_config.json" . }}
+MCPPROXY_TEMPLATE_EOF
+)
+
+CURRENT=$(cat)
+
+if [ -z "$CURRENT" ]; then
+  printf '%s\n' "$TEMPLATE"
+  exit 0
+fi
+
+LIVE_SERVERS=$(printf '%s' "$CURRENT"  | jq '.mcpServers // []')
+TMPL_SERVERS=$(printf '%s' "$TEMPLATE" | jq '.mcpServers')
+
+RESULT=$(printf '%s' "$TEMPLATE" | jq \
+  --argjson live "$LIVE_SERVERS" \
+  --argjson tmpl "$TMPL_SERVERS" \
+  '
+  .mcpServers = (
+    ($live | map(
+      . as $l
+      | ($tmpl | map(select(.name == $l.name)) | first) as $t
+      | if $t then
+          $l * $t
+          | .created = $l.created
+          | .updated = $l.updated
+        else
+          $l
+        end
+    ))
+    + ($tmpl | map(select(.name as $n | ($live | any(.name == $n)) | not)))
+  )
+  ')
+printf '%s' "$RESULT"

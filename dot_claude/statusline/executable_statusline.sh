@@ -23,7 +23,7 @@ j() { printf '%s' "$input" | jq -r "$1" 2>/dev/null; }
 session_id=$(j '.session_id // "unknown"')
 model_id=$(j '.model.id // ""')
 model_name=$(j '.model.display_name // .model.id // "?"')
-cost=$(j '.total_cost_usd // 0')
+reported_cost=$(j '.total_cost_usd // 0')
 exceeds_200k=$(j '.exceeds_200k_tokens // false')
 
 ctx_in=$(j '.context_window.current_usage.input_tokens // 0')
@@ -70,29 +70,38 @@ normalize_model() {
 }
 
 lookup_price_from_cache() {
-  # Outputs "$IN $OUT" (dollars per Mtok) or empty.
+  # Outputs "$IN $OUT $CACHE_W $CACHE_R" (dollars per Mtok) or empty.
+  # Cache rates fall back to Anthropic's standard ratios (1.25× input for
+  # 5-min writes, 0.1× input for reads) when litellm omits them.
   local m="$1"
   [[ -f "$PRICE_CACHE" ]] || return
   local row
   row=$(jq -r --arg m "$m" '
     (.[$m] // empty) as $r
     | if $r == null then empty
-      else "\(($r.input_cost_per_token // 0) * 1000000) \(($r.output_cost_per_token // 0) * 1000000)"
+      else
+        ($r.input_cost_per_token // 0) as $in0
+        | ($r.output_cost_per_token // 0) as $out0
+        | (($in0) * 1000000) as $in
+        | (($out0) * 1000000) as $out
+        | (($r.cache_creation_input_token_cost // ($in0 * 1.25)) * 1000000) as $cw
+        | (($r.cache_read_input_token_cost // ($in0 * 0.1)) * 1000000) as $cr
+        | "\($in) \($out) \($cw) \($cr)"
       end
   ' "$PRICE_CACHE" 2>/dev/null)
-  [[ -n "$row" && "$row" != "0 0" ]] && printf '%s' "$row"
+  [[ -n "$row" && "$row" != "0 0 0 0" ]] && printf '%s' "$row"
 }
 
-# Hardcoded fallback for cold cache / offline. $in $out per Mtok.
+# Hardcoded fallback for cold cache / offline. IN OUT CACHE_W CACHE_R per Mtok.
 fallback_price() {
   local m="$1"
   case "$m" in
-    claude-opus-4*)    echo "15 75" ;;
-    claude-sonnet-4*)  echo "3 15" ;;
-    claude-haiku-4*)   echo "1 5" ;;
-    claude-3-5-sonnet*|claude-3-7-sonnet*) echo "3 15" ;;
-    claude-3-5-haiku*) echo "0.80 4" ;;
-    claude-3-opus*)    echo "15 75" ;;
+    claude-opus-4*)    echo "15 75 18.75 1.5" ;;
+    claude-sonnet-4*)  echo "3 15 3.75 0.30" ;;
+    claude-haiku-4*)   echo "1 5 1.25 0.10" ;;
+    claude-3-5-sonnet*|claude-3-7-sonnet*) echo "3 15 3.75 0.30" ;;
+    claude-3-5-haiku*) echo "0.80 4 1 0.08" ;;
+    claude-3-opus*)    echo "15 75 18.75 1.5" ;;
     *) echo "" ;;
   esac
 }
@@ -115,14 +124,14 @@ if [[ -z "$price_pair" ]]; then
 fi
 
 if [[ -n "$price_pair" ]]; then
-  pin=${price_pair% *}
-  pout=${price_pair#* }
+  read -r pin pout pcw pcr <<< "$price_pair"
   # Trim trailing zeros for neat display (e.g. "15" not "15.0000000")
   fmt_price() {
     awk -v n="$1" 'BEGIN { if (n == int(n)) printf "%d", n; else printf "%.2f", n }'
   }
   rate_card="\$$(fmt_price "$pin")/\$$(fmt_price "$pout")"
 else
+  pin=0; pout=0; pcw=0; pcr=0
   rate_card="\$?/\$?"
 fi
 
@@ -131,17 +140,59 @@ state_file="/tmp/claude-statusline-${session_id}.json"
 now=$(date +%s)
 total_tokens=$(( ctx_in + ctx_cache_w + ctx_cache_r + ctx_out ))
 
-prev_cost=0; prev_tokens=0; prev_cache_w=0; cache_ts=$now
+prev_cost=0; prev_tokens=0; prev_cache_w=0; cache_ts=$now; prev_authoritative=0
 if [[ -f "$state_file" ]]; then
   prev_cost=$(jq -r '.cost // 0' "$state_file" 2>/dev/null)
   prev_tokens=$(jq -r '.tokens // 0' "$state_file" 2>/dev/null)
   prev_cache_w=$(jq -r '.cache_w // 0' "$state_file" 2>/dev/null)
   cache_ts=$(jq -r '.cache_ts // 0' "$state_file" 2>/dev/null)
+  prev_authoritative=$(jq -r '.authoritative // 0' "$state_file" 2>/dev/null)
 fi
 
 # Cache was (re)written this turn if cache_creation_input_tokens increased.
 if awk -v a="$ctx_cache_w" -v b="$prev_cache_w" 'BEGIN { exit !(a+0 > b+0) }'; then
   cache_ts=$now
+fi
+
+# Cost mode. Claude Code reports `.total_cost_usd` only on API-billed sessions;
+# on subscription auth it stays 0. Latch into "authoritative" the first time we
+# see a positive value — once on, never fall back, so a transient 0 doesn't
+# flip us back to imputed mode mid-session.
+authoritative="$prev_authoritative"
+if awk -v c="$reported_cost" 'BEGIN { exit !(c+0 > 0) }'; then
+  authoritative=1
+fi
+
+if [[ "$authoritative" == "1" ]]; then
+  # Trust Claude Code. Hold prev_cost if a render reports 0 after we've latched.
+  if awk -v c="$reported_cost" 'BEGIN { exit !(c+0 > 0) }'; then
+    cost="$reported_cost"
+  else
+    cost="$prev_cost"
+  fi
+  # On the imputed→authoritative transition, suppress delta — the prev_cost
+  # was imputed and subtracting it would produce a misleading number.
+  if [[ "$prev_authoritative" != "1" ]]; then
+    cost_delta=0
+  else
+    cost_delta=$(awk -v a="$cost" -v b="$prev_cost" 'BEGIN { printf "%.8f", a - b }')
+  fi
+  cost_marker=""
+else
+  # Imputed mode: derive cost from the token breakdown × rate card. Re-renders
+  # within the same turn return the same numbers, so we only accumulate when
+  # token totals change.
+  this_turn_cost=$(awk -v ti="$ctx_in" -v tcw="$ctx_cache_w" -v tcr="$ctx_cache_r" -v to="$ctx_out" \
+                       -v pi="$pin" -v pcwr="$pcw" -v pcrr="$pcr" -v po="$pout" \
+                       'BEGIN { printf "%.8f", (ti*pi + tcw*pcwr + tcr*pcrr + to*po) / 1000000 }')
+  if [[ "$total_tokens" != "$prev_tokens" ]]; then
+    cost=$(awk -v a="$prev_cost" -v b="$this_turn_cost" 'BEGIN { printf "%.8f", a + b }')
+    cost_delta="$this_turn_cost"
+  else
+    cost="$prev_cost"
+    cost_delta=0
+  fi
+  cost_marker="~"
 fi
 
 # Persist state for next render.
@@ -150,7 +201,8 @@ jq -n \
   --arg tokens "$total_tokens" \
   --arg cache_w "$ctx_cache_w" \
   --arg cache_ts "$cache_ts" \
-  '{cost: ($cost|tonumber), tokens: ($tokens|tonumber), cache_w: ($cache_w|tonumber), cache_ts: ($cache_ts|tonumber)}' \
+  --arg authoritative "$authoritative" \
+  '{cost: ($cost|tonumber), tokens: ($tokens|tonumber), cache_w: ($cache_w|tonumber), cache_ts: ($cache_ts|tonumber), authoritative: ($authoritative|tonumber)}' \
   > "$state_file" 2>/dev/null
 
 # ---- formatting helpers ----
@@ -198,7 +250,6 @@ bar=""
 (( empty > 0 )) && bar+=$(printf '░%.0s' $(seq 1 $empty))
 
 # ---- deltas ----
-cost_delta=$(awk -v a="$cost" -v b="$prev_cost" 'BEGIN { printf "%.6f", a - b }')
 token_delta=$(( total_tokens - prev_tokens ))
 delta_cost_str=$(fmt_cost_delta "$cost_delta")
 delta_tok_str=$(fmt_tokens "$token_delta")
@@ -214,7 +265,7 @@ fi
 # ---- assemble ----
 sep=" │ "
 line="${model_name} ${rate_card}"
-line+="${sep}$(fmt_cost "$cost")${delta_parts}"
+line+="${sep}${cost_marker}$(fmt_cost "$cost")${delta_parts}"
 line+="${sep}${pct}% [${bar}]"
 line+="${sep}$(fmt_cache_remaining)"
 if [[ "$exceeds_200k" == "true" ]]; then

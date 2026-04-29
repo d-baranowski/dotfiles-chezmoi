@@ -590,19 +590,13 @@
           "key": "r",
           "label": "reload leader",
           "type": "command",
-          "value": "/bin/bash -c 'killall \"Leader Key\"; sleep 0.3; open -a \"Leader Key\"'"
+          "value": "/bin/bash -c 'killall \"Leader Key\"; sleep 2; open -a \"Leader Key\"'"
         },
         {
           "key": "m",
           "label": "toggle mic",
           "type": "command",
           "value": "$HOME/.config/sketchybar/plugins/toggle_mic.sh"
-        },
-        {
-          "key": "n",
-          "label": "clear notifications",
-          "type": "command",
-          "value": "$HOME/.config/sketchybar/plugins/clear_notifications.sh"
         },
         {
           "key": "b",
@@ -1188,6 +1182,43 @@
       "key": "r",
       "label": "Register mgmt",
       "type": "group"
+    },
+    {
+      "key": "n",
+      "label": "clear notifications",
+      "type": "command",
+      "value": "$HOME/.config/sketchybar/plugins/clear_notifications.sh"
+    },
+    {
+      "key": "N",
+      "label": "click top notification",
+      "type": "command",
+      "value": "$HOME/.config/sketchybar/plugins/click_top_notification.sh"
+    },
+    {
+      "key": "i",
+      "label": "open clipboard URL in Chrome (or workspace I)",
+      "type": "command",
+      "value": "$HOME/.local/bin/lk-open-url.sh"
+    },
+    {
+      "key": "l",
+      "label": "last tmux session (toggle)",
+      "type": "command",
+      "value": "/opt/homebrew/bin/tmux switch-client -l"
+    },
+    {
+      "key": "L",
+      "label": "last aerospace workspace (toggle)",
+      "type": "command",
+      "value": "/opt/homebrew/bin/aerospace workspace-back-and-forth"
+    },
+    {
+      "iconPath": "sparkles",
+      "key": "h",
+      "label": "ask Haiku",
+      "type": "command",
+      "value": "/opt/homebrew/bin/hs -c 'ask_haiku.show()'"
     }
   ],
   "type": "group"

@@ -71,6 +71,16 @@ if not ok7 then
   print("Pass module error: " .. tostring(err7))
 end
 
+-- ask_haiku: floating one-shot Claude Haiku prompt window, triggered from
+-- Leader Key root "h". Uses `claude -p --model haiku` (subscription auth).
+local ok8, err8 = pcall(function()
+  ask_haiku = require("ask_haiku")
+end)
+if not ok8 then
+  hs.alert.show("Ask Haiku module error: " .. tostring(err8))
+  print("Ask Haiku module error: " .. tostring(err8))
+end
+
 -- shift+f6 → go to most recent Claude notification (same as bell click)
 hs.hotkey.bind({"shift"}, "f6", function()
   hs.task.new(os.getenv("HOME") .. "/.config/sketchybar/plugins/claude_notify_goto.sh", nil):start()

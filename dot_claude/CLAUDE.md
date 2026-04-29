@@ -19,3 +19,5 @@
 All dotfiles are managed by chezmoi. Never edit target files directly — edit
 the chezmoi source and run `chezmoi apply -v`. See the project CLAUDE.md in
 the dotfiles repo for full conventions.
+
+@RTK.md

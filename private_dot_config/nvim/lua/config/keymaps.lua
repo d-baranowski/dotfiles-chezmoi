@@ -5,6 +5,16 @@ vim.api.nvim_set_keymap("i", "jj", "<Esc>", { noremap = false })
 vim.api.nvim_set_keymap("i", "jk", "<Esc>", { noremap = false })
 vim.keymap.set("n", "<S-q>", "<cmd>Neotree focus<cr>", { desc = "File explorer" })
 
+-- Jump list navigation (like VS Code's go back/forward)
+vim.keymap.set("n", "gb", "<C-o>", { desc = "Jump back" })
+vim.keymap.set("n", "gn", "<C-i>", { desc = "Jump forward" })
+
+-- Reload config
+vim.keymap.set("n", "<leader>sr", function()
+  dofile(vim.env.MYVIMRC)
+  vim.notify("Config reloaded")
+end, { desc = "Reload config" })
+
 -- Toggle "raw" mode for Go: strip everything except syntax highlighting.
 -- Disables gopls, diagnostics, inlay hints, completion, and Copilot for all
 -- current and future Go buffers. Treesitter/syntax highlighting is untouched.

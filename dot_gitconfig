@@ -17,7 +17,7 @@
         amend = commit --amend --no-edit
         staged = diff --cached
         ri = rebase -i
-        rim = rebase -i origin/master
+        rim = !git rebase -i "origin/$(git show-ref --verify --quiet refs/remotes/origin/main && echo main || echo master)"
         pc = !git push origin "$(git symbolic-ref --short HEAD)"
         aliases = !git config --get-regexp ^alias\\. | sed -e s/^alias\\.// -e s/\\ /\\ =\\ /
         co = checkout
@@ -27,4 +27,6 @@
         # List branches
         brl = branch --format='%(HEAD) %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative)) [%(authorname)]' --sort=-committerdate
         pbr = push -u origin HEAD
-	
+
+[url "git@github.com:"]
+	insteadOf = https://github.com/

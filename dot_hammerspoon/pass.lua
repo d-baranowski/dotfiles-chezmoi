@@ -20,6 +20,40 @@ local M = {}
 local PASS_BIN      = "/opt/homebrew/bin/pass"
 local STORE_DIR     = os.getenv("HOME") .. "/.password-store"
 local CLEAR_SECONDS = 45
+local TASK_TIMEOUT  = 15  -- seconds; watchdog to prevent runaway pass procs
+
+-- hs.task launches with a minimal PATH (/usr/bin:/bin:/usr/sbin:/sbin), so the
+-- pass script's platform.sh fails to locate `brew --prefix gnu-getopt` and
+-- falls back to /usr/local/bin/getopt, which doesn't exist on Apple Silicon.
+-- pass then runs its option-parsing `while true; case $1 in ... esac done`
+-- with no `--` terminator, never shifts, and spins at 100% CPU forever.
+local PASS_ENV = {
+  PATH = "/opt/homebrew/bin:/opt/homebrew/opt/gnu-getopt/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+  HOME = os.getenv("HOME"),
+  GNUPGHOME = os.getenv("GNUPGHOME") or (os.getenv("HOME") .. "/.gnupg"),
+}
+
+local activeTasks = {}
+local function trackTask(task)
+  activeTasks[task] = hs.timer.doAfter(TASK_TIMEOUT, function()
+    if task:isRunning() then
+      task:terminate()
+      hs.alert.show("pass: command timed out", 2)
+    end
+    activeTasks[task] = nil
+  end)
+end
+local function runTask(bin, args, cb)
+  local task
+  task = hs.task.new(bin, function(rc, out, err)
+    local t = activeTasks[task]; if t then t:stop(); activeTasks[task] = nil end
+    cb(rc, out, err)
+  end, args)
+  task:setEnvironment(PASS_ENV)
+  trackTask(task)
+  task:start()
+  return task
+end
 
 -- ────────────────────────── helpers ──────────────────────────
 
@@ -141,14 +175,14 @@ local function scheduleClear(secret)
 end
 
 local function readSecret(name, callback)
-  hs.task.new(PASS_BIN, function(exitCode, stdout, stderr)
+  runTask(PASS_BIN, { "show", name }, function(exitCode, stdout, stderr)
     if exitCode ~= 0 then
       callback(nil, (stderr ~= "" and stderr) or ("exit " .. exitCode))
       return
     end
     local firstLine = (stdout or ""):match("^([^\r\n]*)")
     callback(firstLine, nil)
-  end, { "show", name }):start()
+  end)
 end
 
 -- ────────────────────────── webview form ──────────────────────────
@@ -285,7 +319,7 @@ local function savePass(name, secret, onDone)
 
   local cmd = string.format("%s insert -m -f %s < %s && /bin/rm -f %s",
                             PASS_BIN, escName, tmp, tmp)
-  hs.task.new("/bin/sh", function(exitCode, _, stderr)
+  runTask("/bin/sh", { "-c", cmd }, function(exitCode, _, stderr)
     os.remove(tmp)
     if exitCode == 0 then
       toast("✅ " .. name)
@@ -293,7 +327,7 @@ local function savePass(name, secret, onDone)
       toast("pass error: " .. tostring((stderr ~= "" and stderr) or ("exit " .. exitCode)), 3)
     end
     if onDone then onDone(exitCode == 0) end
-  end, { "-c", cmd }):start()
+  end)
 end
 
 function M.add()
@@ -385,13 +419,13 @@ function M.remove()
           if type(body) ~= "table" then return end
           closeForm()
           if body.action ~= "delete" then return end
-          hs.task.new(PASS_BIN, function(exitCode, _, stderr)
+          runTask(PASS_BIN, { "rm", "-f", choice.fullName }, function(exitCode, _, stderr)
             if exitCode == 0 then
               toast("🗑 " .. choice.fullName)
             else
               toast("pass rm: " .. tostring((stderr ~= "" and stderr) or ("exit " .. exitCode)), 3)
             end
-          end, { "rm", "-f", choice.fullName }):start()
+          end)
         end,
       })
     end)
