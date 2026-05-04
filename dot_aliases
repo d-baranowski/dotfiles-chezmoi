@@ -157,6 +157,21 @@ function ssmCert {
 /g' | openssl x509 -text -noout
 }
 
+# Claude Code account switching — personal is the default (no env var).
+# Run `claude-work` in a shell to point that shell at the work config dir;
+# `claude-personal` switches back. Each shell is independent, so two
+# terminals can run different accounts in parallel.
+claude-work() {
+  export CLAUDE_CONFIG_DIR="$HOME/.claude-work"
+  mkdir -p "$CLAUDE_CONFIG_DIR"
+  echo "claude → work ($CLAUDE_CONFIG_DIR)"
+}
+
+claude-personal() {
+  unset CLAUDE_CONFIG_DIR
+  echo "claude → personal (~/.claude)"
+}
+
 function vlt {
      list=$(vault list secret/$1 2<&1)
 
