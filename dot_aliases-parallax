@@ -1,0 +1,10 @@
+# Parallax / Cognite (dune) job-specific shell helpers.
+# When you change contracts, delete this file and remove the `source` line in dot_aliases.
+
+# Build @cognite/dune in the DUNE-483 worktree and run the resulting CLI.
+# Usage: dune-dev create my-app --display-name "X" --org cog-atlas --project p --cluster c
+dune-dev() {
+  local worktree="$HOME/Workspace/parallax/dune/.claude/worktrees/DUNE-483-create-non-interactive-flags"
+  ( cd "$worktree" && pnpm --filter @cognite/dune build > /dev/null ) && \
+    node "$worktree/packages/dune/dist/cli/cli.js" "$@"
+}

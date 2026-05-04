@@ -10,6 +10,7 @@ alias gc="git commit -m "
 alias gcm="git commit -m "
 alias gpl="git pull"
 alias gps="git push "
+alias pF="git push --force-with-lease"
 alias gl="git log"
 alias gs="git status"
 alias gb="git branch"
@@ -226,3 +227,6 @@ jsonArraySplit () {
     cat $1 | jq ".[$f]" > $2-$f.json
   done
 }
+
+# Job-specific helpers (Parallax / Cognite). Easy to nuke when contracts change.
+[[ -f "$HOME/.aliases-parallax" ]] && source "$HOME/.aliases-parallax"
