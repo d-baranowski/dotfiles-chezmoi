@@ -49,10 +49,12 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 # ── Config ─────────────────────────────────────────────────────────────
@@ -148,6 +150,92 @@ def slugify(s: str, max_len: int = 60) -> str:
     return (s or "untitled")[:max_len].rstrip("-")
 
 
+# ── HTTP retry helper ──────────────────────────────────────────────────
+
+# Transient network errors (DNS failures, read timeouts) are retried with
+# fixed backoff before each successive attempt. Covers Krisp's occasional
+# /mcp initialize cold starts (60s+ hangs observed) and overnight wifi/DNS
+# flaps without compounding pressure.
+_TRANSIENT_BACKOFF = (0, 5, 20, 60)
+
+# 429 backoff used only when the server doesn't send Retry-After. After
+# exhausting attempts we fire the persistent red banner and exit 99 — the
+# next hourly launchd tick gets a clean slate.
+_RATE_LIMIT_BACKOFF = (5, 60, 300)
+
+
+def _parse_retry_after(value: str | None) -> int | None:
+    """Parse a Retry-After header value (seconds or HTTP-date). Returns None
+    if absent or unparseable so the caller can fall back to default backoff."""
+    if not value:
+        return None
+    value = value.strip()
+    try:
+        return max(0, int(value))
+    except ValueError:
+        pass
+    try:
+        dt = parsedate_to_datetime(value)
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return max(0, int((dt - datetime.now(timezone.utc)).total_seconds()))
+    except (TypeError, ValueError):
+        return None
+
+
+def http_post_with_retry(
+    req: urllib.request.Request, op_name: str, timeout: int = 60,
+) -> tuple[str | None, str]:
+    """POST with retries on transient errors and Retry-After-aware 429 backoff.
+
+    Returns (body, content_type). body is None for HTTP 202 (notifications).
+    On 429 exhaustion: fires rate-limit banner and exits 99.
+    On other HTTP errors: calls die() with payload (no retry).
+    On exhausted transient retries: calls die() with the last exception.
+    """
+    transient_idx = 0
+    rate_idx = 0
+    while True:
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                if r.status == 202:
+                    return None, ""
+                ct = r.headers.get("Content-Type", "")
+                raw = r.read().decode("utf-8", errors="replace")
+                return raw, ct
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                try:
+                    e.read()  # drain to release connection
+                except Exception:
+                    pass
+                if rate_idx >= len(_RATE_LIMIT_BACKOFF):
+                    fire_rate_limit_banner(op_name)
+                    sys.exit(99)
+                hinted = _parse_retry_after(e.headers.get("Retry-After"))
+                wait = hinted if hinted is not None else _RATE_LIMIT_BACKOFF[rate_idx]
+                src = "Retry-After" if hinted is not None else "default"
+                log(f"{op_name}: HTTP 429, retrying in {wait}s ({src}; "
+                    f"attempt {rate_idx + 2}/{len(_RATE_LIMIT_BACKOFF) + 1})")
+                time.sleep(wait)
+                rate_idx += 1
+                continue
+            payload = e.read().decode("utf-8", errors="replace")
+            die(f"{op_name} failed HTTP {e.code}: {payload}")
+        except (TimeoutError, urllib.error.URLError) as e:
+            transient_idx += 1
+            if transient_idx >= len(_TRANSIENT_BACKOFF):
+                die(f"{op_name} failed after {len(_TRANSIENT_BACKOFF)} attempts: "
+                    f"{type(e).__name__}: {e}")
+            wait = _TRANSIENT_BACKOFF[transient_idx]
+            log(f"{op_name}: {type(e).__name__} ({e}), retrying in {wait}s "
+                f"(attempt {transient_idx + 1}/{len(_TRANSIENT_BACKOFF)})")
+            time.sleep(wait)
+            continue
+
+
 # ── OAuth ──────────────────────────────────────────────────────────────
 
 def load_creds() -> dict:
@@ -172,15 +260,8 @@ def refresh_access_token(creds: dict) -> tuple[str, dict]:
             "User-Agent": USER_AGENT,
         }, method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            tokens = json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        payload = e.read().decode("utf-8", errors="replace")
-        if e.code == 429:
-            fire_rate_limit_banner("token refresh")
-            sys.exit(99)
-        die(f"token refresh failed (HTTP {e.code}): {payload}")
+    raw, _ = http_post_with_retry(req, "token refresh", timeout=30)
+    tokens = json.loads(raw)
     new_refresh = tokens.get("refresh_token")
     if new_refresh and new_refresh != creds["refresh_token"]:
         creds["refresh_token"] = new_refresh
@@ -210,18 +291,9 @@ class MCPClient:
     def _post(self, payload: dict) -> dict | None:
         data = json.dumps(payload).encode()
         req = urllib.request.Request(self.url, data=data, headers=self.headers, method="POST")
-        try:
-            with urllib.request.urlopen(req, timeout=60) as r:
-                if r.status == 202:
-                    return None  # notification, no body
-                ct = r.headers.get("Content-Type", "")
-                raw = r.read().decode("utf-8", errors="replace")
-        except urllib.error.HTTPError as e:
-            if e.code == 429:
-                fire_rate_limit_banner(f"MCP {payload.get('method', '?')}")
-                sys.exit(99)
-            payload_s = e.read().decode("utf-8", errors="replace")
-            die(f"MCP {payload.get('method', '?')} failed HTTP {e.code}: {payload_s}")
+        raw, ct = http_post_with_retry(req, f"MCP {payload.get('method', '?')}", timeout=60)
+        if raw is None:
+            return None  # notification, no body
         # Krisp returns text/event-stream even for single-response calls.
         if ct.startswith("text/event-stream") or "\ndata: " in raw or raw.startswith("data: "):
             for line in raw.splitlines():
