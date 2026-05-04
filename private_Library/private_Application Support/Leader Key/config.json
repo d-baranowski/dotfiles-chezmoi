@@ -731,6 +731,12 @@
           "value": "/opt/homebrew/bin/cb info"
         },
         {
+          "key": "d",
+          "label": "copy today's date (dd-mm-yy)",
+          "type": "command",
+          "value": "/bin/date +%d-%m-%y | /usr/bin/tr -d '\\n' | /usr/bin/pbcopy"
+        },
+        {
           "actions": [
             {
               "key": "g",
