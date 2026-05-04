@@ -4,6 +4,40 @@
             "complex_modifications": {
                 "rules": [
                     {
+                        "description": "Voyager: Alt+V → Paste (Chrome, Slack, Obsidian)",
+                        "manipulators": [
+                            {
+                                "type": "basic",
+                                "conditions": [
+                                    {
+                                        "type": "device_if",
+                                        "identifiers": [
+                                            { "vendor_id": 12951, "product_id": 6519 }
+                                        ]
+                                    },
+                                    {
+                                        "type": "frontmost_application_if",
+                                        "bundle_identifiers": [
+                                            "^com\\.google\\.Chrome$",
+                                            "^com\\.tinyspeck\\.slackmacgap$",
+                                            "^md\\.obsidian$"
+                                        ]
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "v",
+                                    "modifiers": { "mandatory": ["left_option"] }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "v",
+                                        "modifiers": ["left_command"]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
                         "description": "Map Caps Lock to Shift+F3",
                         "manipulators": [
                             {
