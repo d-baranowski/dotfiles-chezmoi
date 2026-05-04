@@ -26,6 +26,8 @@ model_name=$(j '.model.display_name // .model.id // "?"')
 reported_cost=$(j '.total_cost_usd // 0')
 exceeds_200k=$(j '.exceeds_200k_tokens // false')
 
+project_dir=$(j '.workspace.project_dir // .cwd // ""')
+
 ctx_in=$(j '.context_window.current_usage.input_tokens // 0')
 ctx_cache_w=$(j '.context_window.current_usage.cache_creation_input_tokens // 0')
 ctx_cache_r=$(j '.context_window.current_usage.cache_read_input_tokens // 0')
@@ -262,9 +264,23 @@ if [[ -n "$delta_cost_str" || -n "$delta_tok_str" ]]; then
   fi
 fi
 
+# ---- pretty project dir (replace $HOME with ~) ----
+pretty_dir=""
+if [[ -n "$project_dir" ]]; then
+  if [[ "$project_dir" == "$HOME" ]]; then
+    pretty_dir="~"
+  elif [[ "$project_dir" == "$HOME/"* ]]; then
+    pretty_dir="~/${project_dir#$HOME/}"
+  else
+    pretty_dir="$project_dir"
+  fi
+fi
+
 # ---- assemble ----
 sep=" │ "
-line="${model_name} ${rate_card}"
+line=""
+[[ -n "$pretty_dir" ]] && line+="${pretty_dir}${sep}"
+line+="${model_name} ${rate_card}"
 line+="${sep}${cost_marker}$(fmt_cost "$cost")${delta_parts}"
 line+="${sep}${pct}% [${bar}]"
 line+="${sep}$(fmt_cache_remaining)"
