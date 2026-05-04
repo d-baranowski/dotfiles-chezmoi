@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width: 100%; height: 100%; }
+body {
+  font-family: 'SF Mono','Menlo','Monaco',monospace;
+  background: #1e1e2e; color: #cdd6f4;
+  font-size: 13px;
+}
+#bar {
+  position: sticky; top: 0; z-index: 10;
+  background: #181825; padding: 14px 20px 10px;
+  border-bottom: 1px solid #313244;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+#bar h1 { font-size: 15px; font-weight: 600; color: #cdd6f4; margin-right: 8px; }
+#search {
+  flex: 1; min-width: 200px;
+  padding: 8px 12px;
+  background: #313244; border: 1px solid #45475a;
+  border-radius: 5px; color: #cdd6f4;
+  font-family: inherit; font-size: 13px; outline: none;
+}
+#search:focus { border-color: #89b4fa; }
+button {
+  background: #45475a; color: #cdd6f4;
+  border: 1px solid #585b70; padding: 7px 12px;
+  border-radius: 5px; font-family: inherit; font-size: 12px;
+  cursor: pointer;
+}
+button:hover { background: #585b70; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.primary { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; font-weight: 600; }
+button.primary:hover { background: #b4befe; }
+button.danger  { background: #f38ba8; color: #1e1e2e; border-color: #f38ba8; }
+button.danger:hover  { background: #eba0ac; }
+#status {
+  padding: 8px 20px; background: #11111b; color: #a6adc8;
+  border-bottom: 1px solid #313244; font-size: 12px;
+  min-height: 32px; display: flex; align-items: center; gap: 8px;
+}
+#status.error { color: #f38ba8; }
+#status.running { color: #f9e2af; }
+#status.ok { color: #a6e3a1; }
+#wrap { width: 100%; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: #181825;
+  text-align: left; padding: 9px 12px;
+  font-weight: 600; color: #89b4fa; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid #313244;
+}
+tbody tr { border-bottom: 1px solid #1e1e2e; }
+tbody tr:hover { background: #181825; }
+td { padding: 7px 12px; vertical-align: middle; }
+.col-ws    { color: #cba6f7; width: 130px; }
+.col-type  { color: #94e2d5; width: 60px; font-size: 11px; text-transform: uppercase; }
+.col-name  { color: #cdd6f4; }
+.col-name .id { color: #585b70; font-size: 11px; margin-left: 6px; }
+.col-msg, .col-sync { color: #a6adc8; width: 150px; font-size: 12px; }
+.col-sync.never { color: #6c7086; font-style: italic; }
+.col-actions { width: 110px; text-align: right; }
+.queued-badge {
+  background: #f9e2af; color: #1e1e2e;
+  padding: 2px 6px; border-radius: 3px; font-size: 10px;
+  font-weight: 600; margin-left: 6px;
+}
+.hidden { display: none; }
+#log {
+  display: none;
+  background: #11111b; color: #a6adc8;
+  padding: 10px 20px; border-top: 1px solid #313244;
+  max-height: 200px; overflow: auto;
+  font-size: 11px; line-height: 1.5; white-space: pre-wrap;
+}
+#log.show { display: block; }
+#log .err { color: #f38ba8; }
+#empty { padding: 60px 20px; text-align: center; color: #585b70; }
+</style></head><body>
+
+<div id="bar">
+  <h1>Slack Sync</h1>
+  <input type="text" id="search" placeholder="Filter by name, workspace, type..." autofocus>
+  <button id="btn-refresh">Refresh</button>
+  <button id="btn-clear">Clear Queue</button>
+  <button id="btn-run" class="primary">Run Queue</button>
+</div>
+
+<div id="status">Loading...</div>
+
+<div id="wrap">
+  <table id="tbl">
+    <thead><tr>
+      <th class="col-ws">Workspace</th>
+      <th class="col-type">Type</th>
+      <th class="col-name">Name</th>
+      <th class="col-msg">Last Message</th>
+      <th class="col-sync">Last Synced</th>
+      <th class="col-actions"></th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div id="empty" class="hidden">No chats found.</div>
+</div>
+
+<div id="log"></div>
+
+<script>
+const post = (action, extra) =>
+  window.webkit.messageHandlers.slacksync.postMessage(
+    JSON.stringify(Object.assign({ action }, extra || {}))
+  );
+
+const $ = (id) => document.getElementById(id);
+
+let chats = [];
+let queueSize = 0;
+let running = false;
+
+function fmtTs(ts) {
+  if (!ts) return "";
+  // Accept either seconds-since-epoch (int) or slack-style "1700000000.000123" string/float.
+  let sec = typeof ts === "number" ? ts : parseFloat(ts);
+  if (!sec || isNaN(sec)) return "";
+  const d = new Date(sec * 1000);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return Math.floor(diff) + "s ago";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+  if (diff < 86400 * 14) return Math.floor(diff / 86400) + "d ago";
+  return d.toISOString().slice(0, 10);
+}
+
+function setStatus(msg, kind) {
+  const s = $("status");
+  s.textContent = msg;
+  s.className = kind || "";
+}
+
+function render() {
+  const q = $("search").value.trim().toLowerCase();
+  const rows = $("rows");
+  rows.innerHTML = "";
+  let visible = 0;
+  for (const c of chats) {
+    const haystack = (c.workspace + " " + c.type + " " + c.name + " " + c.id).toLowerCase();
+    if (q && !q.split(/\s+/).every(t => haystack.includes(t))) continue;
+    visible++;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-ws">${escapeHTML(c.workspace)}</td>
+      <td class="col-type">${escapeHTML(c.type)}</td>
+      <td class="col-name">${escapeHTML(c.name)}<span class="id">${escapeHTML(c.id)}</span>${c.queued ? '<span class="queued-badge">QUEUED</span>' : ''}</td>
+      <td class="col-msg">${fmtTs(c.last_message_ts)}</td>
+      <td class="col-sync ${c.last_sync_ts ? '' : 'never'}">${c.last_sync_ts ? fmtTs(c.last_sync_ts) : 'never'}</td>
+      <td class="col-actions"></td>
+    `;
+    const actions = tr.querySelector(".col-actions");
+    const btn = document.createElement("button");
+    if (c.queued) {
+      btn.textContent = "Remove";
+      btn.className = "danger";
+      btn.onclick = () => post("dequeue", { workspace: c.workspace, channel: c.id });
+    } else {
+      btn.textContent = "Enqueue";
+      btn.onclick = () => post("enqueue", { workspace: c.workspace, channel: c.id });
+    }
+    btn.disabled = running;
+    actions.appendChild(btn);
+    rows.appendChild(tr);
+  }
+  $("empty").classList.toggle("hidden", visible !== 0);
+  $("btn-run").disabled = running || queueSize === 0;
+  $("btn-clear").disabled = running || queueSize === 0;
+  $("btn-refresh").disabled = running;
+  if (!running) {
+    setStatus(`${chats.length} chats · ${queueSize} queued`, "ok");
+  }
+}
+
+function escapeHTML(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function appendLog(line, kind) {
+  const log = $("log");
+  log.classList.add("show");
+  const span = document.createElement("div");
+  if (kind) span.className = kind;
+  span.textContent = line;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+  // Cap at 500 lines.
+  while (log.children.length > 500) log.removeChild(log.firstChild);
+}
+
+window._sync = {
+  onChats(data) {
+    chats = data.chats || [];
+    queueSize = data.queue_size || 0;
+    render();
+  },
+  onError(data) {
+    setStatus("error: " + (data.error || "unknown"), "error");
+    appendLog(data.error || "unknown", "err");
+  },
+  onRunStart() {
+    running = true;
+    $("log").innerHTML = "";
+    setStatus("running queue...", "running");
+    render();
+  },
+  onRunEvent(evt) {
+    if (evt.event === "log") {
+      appendLog(evt.line);
+    } else if (evt.event === "start") {
+      setStatus(`syncing ${evt.total} chat(s)...`, "running");
+      appendLog(`▶ start (${evt.total} items)`);
+    } else if (evt.event === "item_start") {
+      setStatus(`[${evt.index + 1}] ${evt.workspace}:${evt.channel}`, "running");
+      appendLog(`▶ ${evt.workspace}:${evt.channel} (${evt.archive || "?"})`);
+    } else if (evt.event === "item_done") {
+      appendLog(`✓ done`);
+    } else if (evt.event === "item_error") {
+      appendLog(`✗ error: ${evt.error}`, "err");
+    } else if (evt.event === "rate_limited") {
+      appendLog(`⚠ rate limited — aborting`, "err");
+      setStatus("rate-limited; queue paused", "error");
+    } else if (evt.event === "render_start") {
+      setStatus("rendering markdown...", "running");
+      appendLog(`▶ render`);
+    } else if (evt.event === "done") {
+      running = false;
+      const status = evt.ok ? "ok" : "error";
+      const msg = evt.ok
+        ? `done · ${evt.processed} processed · ${evt.remaining} remaining`
+        : `stopped · ${evt.processed} processed · ${evt.remaining} remaining`;
+      setStatus(msg, status);
+      appendLog(`■ ${msg}`);
+      render();
+    }
+  },
+  onRunDone(data) {
+    running = false;
+    if (data && data.error) {
+      setStatus("run failed: " + data.error, "error");
+      appendLog(data.error, "err");
+    }
+    render();
+  },
+};
+
+$("btn-refresh").onclick = () => { setStatus("loading..."); post("list_chats"); };
+$("btn-clear").onclick   = () => post("clear_queue");
+$("btn-run").onclick     = () => post("run_queue");
+$("search").addEventListener("input", render);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") post("close");
+  if (e.key === "r" && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    post("list_chats");
+  }
+});
+</script>
+</body></html>

@@ -1,0 +1,414 @@
+#!/usr/bin/env python3
+# slackdump-sync-ctl — manual, UI-driven Slack sync controller.
+#
+# Distinct from `slackdump-sync` (the launchd hourly script). This tool
+# does not call Slack on its own clock; every API call is gated on an
+# explicit `run-queue` invocation triggered from the Hammerspoon UI.
+#
+# Subcommands:
+#   list-chats   — JSON list of known chats (read-only, no API calls)
+#   queue        — JSON view of the pending sync queue
+#   enqueue      — add (workspace, channel) to the queue
+#   dequeue      — remove (workspace, channel) from the queue
+#   clear-queue  — drop all queued items
+#   run-queue    — drain the queue, one chat at a time (HITS SLACK API)
+#
+# Configuration: ~/Library/Application Support/slackdump-sync/workspaces.toml
+# State:        ~/Library/Application Support/slackdump-sync/sync-state.json
+# API limits:   ~/Library/Application Support/slackdump-sync/api-limits.toml
+
+import argparse
+import json
+import os
+import re
+import shutil
+import sqlite3
+import subprocess
+import sys
+import time
+import tomllib
+from pathlib import Path
+
+BASE_DIR = Path(os.environ["HOME"]) / "Library/Application Support/slackdump-sync"
+CONFIG_PATH = BASE_DIR / "workspaces.toml"
+STATE_PATH = BASE_DIR / "sync-state.json"
+API_CONFIG = BASE_DIR / "api-limits.toml"
+OUTPUT_DIR = Path(os.environ["HOME"]) / "SlackSync/Slack"
+CONVERTER = Path(os.environ["HOME"]) / ".local/bin/slackdump-to-md.py"
+COGNITE_CHANNEL = "C09EAH2KZJ6"  # used by the markdown render filter
+
+INTER_CALL_DELAY = 1.5  # seconds between slackdump invocations
+
+RATE_LIMIT_RE = re.compile(
+    r"rate[ _-]?limit[ _-]?(exceeded|ed)|rate_limited|429[ ]+too[ _-]?many",
+    re.IGNORECASE,
+)
+
+
+# ── Config & state ────────────────────────────────────────────────────
+
+def load_config():
+    if not CONFIG_PATH.exists():
+        die(f"workspaces config not found at {CONFIG_PATH}")
+    with CONFIG_PATH.open("rb") as f:
+        cfg = tomllib.load(f)
+    workspaces = cfg.get("workspace", [])
+    if not workspaces:
+        die("no workspaces defined")
+    for ws in workspaces:
+        for arc in ws.get("archive", []):
+            arc["dir"] = str(Path(arc["dir"]).expanduser())
+    return workspaces
+
+
+def load_state():
+    if not STATE_PATH.exists():
+        return {"queue": [], "last_sync": {}}
+    with STATE_PATH.open() as f:
+        s = json.load(f)
+    s.setdefault("queue", [])
+    s.setdefault("last_sync", {})
+    return s
+
+
+def save_state(state):
+    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STATE_PATH.with_suffix(".json.tmp")
+    with tmp.open("w") as f:
+        json.dump(state, f, indent=2)
+    tmp.replace(STATE_PATH)
+
+
+def state_key(workspace, channel):
+    return f"{workspace}:{channel}"
+
+
+# ── Chat discovery from SQLite archives ───────────────────────────────
+
+def chats_in_archive(archive, workspace_name, last_sync):
+    """Read CHANNEL + S_USER + last MESSAGE timestamp from one archive DB."""
+    db = Path(archive["dir"]) / "slackdump.sqlite"
+    if not db.exists():
+        return []
+
+    types_filter = set(archive.get("types") or [])
+    only_filter = set(archive.get("only") or [])
+
+    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    try:
+        # Most recent CHANNEL row per ID (channel metadata can be re-loaded
+        # across multiple chunks; the latest is authoritative).
+        rows = conn.execute(
+            """
+            SELECT c.ID, c.NAME, c.DATA
+            FROM CHANNEL c
+            WHERE c.CHUNK_ID = (
+                SELECT MAX(CHUNK_ID) FROM CHANNEL c2 WHERE c2.ID = c.ID
+            )
+            """
+        ).fetchall()
+
+        users = {}
+        for uid, data in conn.execute("SELECT ID, DATA FROM S_USER"):
+            try:
+                users[uid] = json.loads(data)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        # Last message ts per channel (TS is "1700000000.000123" string form).
+        last_msg = {}
+        for cid, ts in conn.execute(
+            "SELECT CHANNEL_ID, MAX(CAST(TS AS REAL)) FROM MESSAGE GROUP BY CHANNEL_ID"
+        ):
+            last_msg[cid] = ts
+    finally:
+        conn.close()
+
+    out = []
+    for cid, name, data_blob in rows:
+        try:
+            data = json.loads(data_blob)
+        except (json.JSONDecodeError, TypeError):
+            data = {}
+
+        if data.get("is_im"):
+            ctype = "im"
+        elif data.get("is_mpim"):
+            ctype = "mpim"
+        else:
+            ctype = "channel"
+
+        if types_filter and ctype not in types_filter:
+            continue
+        if only_filter and cid not in only_filter:
+            continue
+
+        if ctype == "im":
+            uid = data.get("user")
+            udata = users.get(uid, {})
+            profile = udata.get("profile", {}) or {}
+            display = (
+                profile.get("display_name")
+                or udata.get("real_name")
+                or udata.get("name")
+                or uid
+                or cid
+            )
+        else:
+            display = name or data.get("name") or cid
+
+        out.append({
+            "workspace": workspace_name,
+            "archive": archive["name"],
+            "id": cid,
+            "name": display,
+            "type": ctype,
+            "last_message_ts": last_msg.get(cid),
+            "last_sync_ts": last_sync.get(state_key(workspace_name, cid)),
+        })
+    return out
+
+
+def all_chats(workspaces, state):
+    chats = []
+    for ws in workspaces:
+        for arc in ws.get("archive", []):
+            chats.extend(chats_in_archive(arc, ws["name"], state["last_sync"]))
+    chats.sort(key=lambda c: (c["last_message_ts"] or 0), reverse=True)
+    return chats
+
+
+def archive_for(workspaces, workspace_name, channel_id):
+    """Find which archive holds a given (workspace, channel)."""
+    for ws in workspaces:
+        if ws["name"] != workspace_name:
+            continue
+        for arc in ws.get("archive", []):
+            db = Path(arc["dir"]) / "slackdump.sqlite"
+            if not db.exists():
+                continue
+            conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+            try:
+                row = conn.execute(
+                    "SELECT 1 FROM CHANNEL WHERE ID = ? LIMIT 1", (channel_id,)
+                ).fetchone()
+            finally:
+                conn.close()
+            if row:
+                return ws, arc
+    return None, None
+
+
+# ── Slackdump invocation ──────────────────────────────────────────────
+
+class RateLimited(Exception):
+    pass
+
+
+def run_slackdump(workspace, archive_dir, channel_id, log_writer):
+    """Resume a single channel. Returns on success; raises RateLimited on 429."""
+    cmd = ["slackdump", "resume", "-workspace", workspace,
+           "-api-config", str(API_CONFIG), archive_dir, channel_id]
+    log_writer(f"$ {' '.join(cmd)}")
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+        bufsize=1,
+    )
+    saw_rate_limit = False
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        line = line.rstrip()
+        log_writer(line)
+        if RATE_LIMIT_RE.search(line):
+            saw_rate_limit = True
+    rc = proc.wait()
+    if saw_rate_limit:
+        raise RateLimited(f"slackdump rate-limited for {workspace}:{channel_id}")
+    if rc != 0:
+        raise RuntimeError(f"slackdump exited {rc} for {workspace}:{channel_id}")
+
+
+def render_markdown(workspaces, log_writer):
+    """Re-render markdown for any archive that exists. Cheap, no API calls."""
+    if not CONVERTER.exists():
+        log_writer(f"[warn] converter not found at {CONVERTER}; skipping render")
+        return
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    (OUTPUT_DIR / "_attachments").mkdir(exist_ok=True)
+    for ws in workspaces:
+        for arc in ws.get("archive", []):
+            db = Path(arc["dir"]) / "slackdump.sqlite"
+            if not db.exists():
+                continue
+            uploads = Path(arc["dir"]) / "__uploads"
+            link = OUTPUT_DIR / "_attachments" / arc["name"]
+            try:
+                if link.is_symlink() or link.exists():
+                    link.unlink()
+                link.symlink_to(uploads)
+            except OSError as e:
+                log_writer(f"[warn] symlink {link} -> {uploads}: {e}")
+            args = ["python3", str(CONVERTER), str(db), str(OUTPUT_DIR),
+                    f"_attachments/{arc['name']}"]
+            if arc.get("types"):
+                args.append("--types=" + ",".join(arc["types"]))
+            if arc.get("only"):
+                args.append("--only=" + ",".join(arc["only"]))
+            log_writer(f"$ {' '.join(args)}")
+            r = subprocess.run(args, capture_output=True, text=True)
+            if r.stdout:
+                log_writer(r.stdout.rstrip())
+            if r.returncode != 0:
+                log_writer(f"[warn] converter exited {r.returncode}: {r.stderr.rstrip()}")
+
+
+# ── Subcommands ───────────────────────────────────────────────────────
+
+def cmd_list_chats(args):
+    workspaces = load_config()
+    state = load_state()
+    chats = all_chats(workspaces, state)
+    queued = {(q["workspace"], q["channel"]) for q in state["queue"]}
+    for c in chats:
+        c["queued"] = (c["workspace"], c["id"]) in queued
+    print(json.dumps({"chats": chats, "queue_size": len(state["queue"])}))
+
+
+def cmd_queue(args):
+    state = load_state()
+    print(json.dumps({"queue": state["queue"]}))
+
+
+def cmd_enqueue(args):
+    workspaces = load_config()
+    state = load_state()
+    ws, arc = archive_for(workspaces, args.workspace, args.channel)
+    if not arc:
+        die(f"channel {args.channel} not found in any archive for {args.workspace}")
+    for q in state["queue"]:
+        if q["workspace"] == args.workspace and q["channel"] == args.channel:
+            print(json.dumps({"ok": True, "already_queued": True}))
+            return
+    state["queue"].append({
+        "workspace": args.workspace,
+        "channel": args.channel,
+        "added_at": int(time.time()),
+    })
+    save_state(state)
+    print(json.dumps({"ok": True, "queue_size": len(state["queue"])}))
+
+
+def cmd_dequeue(args):
+    state = load_state()
+    before = len(state["queue"])
+    state["queue"] = [
+        q for q in state["queue"]
+        if not (q["workspace"] == args.workspace and q["channel"] == args.channel)
+    ]
+    save_state(state)
+    print(json.dumps({"ok": True, "removed": before - len(state["queue"])}))
+
+
+def cmd_clear_queue(args):
+    state = load_state()
+    n = len(state["queue"])
+    state["queue"] = []
+    save_state(state)
+    print(json.dumps({"ok": True, "cleared": n}))
+
+
+def cmd_run_queue(args):
+    workspaces = load_config()
+    state = load_state()
+    queue = list(state["queue"])
+    if not queue:
+        emit({"event": "done", "ok": True, "processed": 0, "remaining": 0})
+        return
+
+    if not shutil.which("slackdump"):
+        die("slackdump binary not on PATH")
+
+    emit({"event": "start", "total": len(queue)})
+
+    def log_writer(line):
+        emit({"event": "log", "line": line})
+
+    processed = 0
+    for i, item in enumerate(queue):
+        ws_name, cid = item["workspace"], item["channel"]
+        ws, arc = archive_for(workspaces, ws_name, cid)
+        emit({"event": "item_start", "index": i, "workspace": ws_name,
+              "channel": cid, "archive": arc["name"] if arc else None})
+        if not arc:
+            emit({"event": "item_error", "index": i,
+                  "error": "channel not found in any archive"})
+            # Drop from queue regardless — it's not actionable.
+            state["queue"] = [q for q in state["queue"]
+                              if not (q["workspace"] == ws_name and q["channel"] == cid)]
+            save_state(state)
+            continue
+        try:
+            run_slackdump(ws_name, arc["dir"], cid, log_writer)
+        except RateLimited as e:
+            emit({"event": "rate_limited", "index": i, "error": str(e)})
+            # Leave this item AND the rest in the queue for a later run.
+            emit({"event": "done", "ok": False, "processed": processed,
+                  "remaining": len(state["queue"])})
+            return
+        except Exception as e:
+            emit({"event": "item_error", "index": i, "error": str(e)})
+            # Drop on hard error so the queue can drain; user can re-enqueue.
+            state["queue"] = [q for q in state["queue"]
+                              if not (q["workspace"] == ws_name and q["channel"] == cid)]
+            save_state(state)
+            continue
+        # Success: update last_sync, drop from queue, persist.
+        state["last_sync"][state_key(ws_name, cid)] = int(time.time())
+        state["queue"] = [q for q in state["queue"]
+                          if not (q["workspace"] == ws_name and q["channel"] == cid)]
+        save_state(state)
+        processed += 1
+        emit({"event": "item_done", "index": i})
+        if i < len(queue) - 1:
+            time.sleep(INTER_CALL_DELAY)
+
+    emit({"event": "render_start"})
+    render_markdown(workspaces, log_writer)
+    emit({"event": "done", "ok": True, "processed": processed,
+          "remaining": len(state["queue"])})
+
+
+# ── Helpers ───────────────────────────────────────────────────────────
+
+def emit(obj):
+    """Write a JSON event line to stdout for the UI to stream."""
+    print(json.dumps(obj), flush=True)
+
+
+def die(msg):
+    print(json.dumps({"error": msg}), file=sys.stderr)
+    sys.exit(2)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("list-chats")
+    sub.add_parser("queue")
+    e = sub.add_parser("enqueue"); e.add_argument("--workspace", required=True); e.add_argument("--channel", required=True)
+    d = sub.add_parser("dequeue"); d.add_argument("--workspace", required=True); d.add_argument("--channel", required=True)
+    sub.add_parser("clear-queue")
+    sub.add_parser("run-queue")
+    args = p.parse_args()
+    {
+        "list-chats": cmd_list_chats,
+        "queue": cmd_queue,
+        "enqueue": cmd_enqueue,
+        "dequeue": cmd_dequeue,
+        "clear-queue": cmd_clear_queue,
+        "run-queue": cmd_run_queue,
+    }[args.cmd](args)
+
+
+if __name__ == "__main__":
+    main()

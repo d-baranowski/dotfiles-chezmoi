@@ -1219,6 +1219,13 @@
       "label": "ask Haiku",
       "type": "command",
       "value": "/opt/homebrew/bin/hs -c 'ask_haiku.show()'"
+    },
+    {
+      "iconPath": "message",
+      "key": "S",
+      "label": "Slack sync (manual)",
+      "type": "command",
+      "value": "/opt/homebrew/bin/hs -c 'slacksync.show()'"
     }
   ],
   "type": "group"

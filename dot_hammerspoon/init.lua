@@ -81,6 +81,17 @@ if not ok8 then
   print("Ask Haiku module error: " .. tostring(err8))
 end
 
+-- slacksync: webview UI to browse/queue/sync Slack chats (replacement for the
+-- disabled hourly auto-sync; only hits Slack when user presses "Run Queue").
+-- Invoked from Leader Key root "S" via `hs -c 'slacksync.show()'`.
+local ok9, err9 = pcall(function()
+  slacksync = require("slacksync")
+end)
+if not ok9 then
+  hs.alert.show("Slacksync module error: " .. tostring(err9))
+  print("Slacksync module error: " .. tostring(err9))
+end
+
 -- shift+f6 → go to most recent Claude notification (same as bell click)
 hs.hotkey.bind({"shift"}, "f6", function()
   hs.task.new(os.getenv("HOME") .. "/.config/sketchybar/plugins/claude_notify_goto.sh", nil):start()

@@ -1,0 +1,31 @@
+# Slackdump sync — workspace registry.
+#
+# Read by `slackdump-sync-ctl` (the manual UI-driven sync tool, distinct from
+# the launchd-driven hourly sync). Each workspace lists one or more archive
+# directories. An archive is a slackdump SQLite DB that holds some subset of
+# that workspace's chats — typically split by chat type so per-archive sync
+# policies can differ (e.g. DMs need refresh discovery, fixed channels don't).
+#
+# Adding a new workspace:
+#   1. Manually seed an archive with `slackdump archive -workspace NAME ...`
+#   2. Add a [[workspace]] block here, pointing at the archive dir.
+#   3. Open the slacksync UI; new chats appear after the next "Refresh" press.
+#
+# Filters:
+#   types = ["im","mpim","channel"]   only show chats matching these types
+#   only  = ["C123","C456"]           only show these specific channel IDs
+# Filters apply to BOTH the listing and run-queue (you can't enqueue a
+# filtered-out chat from the UI, by construction).
+
+[[workspace]]
+name = "helloparallax"
+
+  [[workspace.archive]]
+  name  = "dms"
+  dir   = "~/Library/Application Support/slackdump-sync/dms"
+  types = ["im", "mpim"]
+
+  [[workspace.archive]]
+  name = "cognite"
+  dir  = "~/Library/Application Support/slackdump-sync/cognite"
+  only = ["C09EAH2KZJ6"]
