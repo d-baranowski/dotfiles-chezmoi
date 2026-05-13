@@ -73,6 +73,9 @@ set -g renumber-windows on       # renumber all windows when any window is close
 set -g set-clipboard on          # use system clipboard
 set -g status-position top
 set -g status-interval 1         # redraw status bar every second (for prefix color)
+# Let the session/directory pills grow to fit; defaults (10/40) clip long names.
+set -g status-left-length 200
+set -g status-right-length 200
 unbind C-b
 set-option -g prefix C-k
 bind C-k send-prefix
@@ -82,6 +85,12 @@ set -g mouse on
 
 bind | split-window -h -c "#{pane_current_path}"
 bind - split-window -v -c "#{pane_current_path}"
+
+# <prefix> e: toggle current window between side-by-side and stacked layouts
+set -g @split-orientation "h"
+bind e if-shell -F '#{==:#{@split-orientation},h}' \
+  'select-layout even-vertical ; set -g @split-orientation v' \
+  'select-layout even-horizontal ; set -g @split-orientation h'
 unbind '"'
 unbind %
 

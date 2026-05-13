@@ -62,6 +62,11 @@ from pathlib import Path
 STATE_DIR = Path.home() / "Library" / "Application Support" / "krisp-sync"
 TOKEN_FILE = STATE_DIR / "token.json"
 STATE_FILE = STATE_DIR / "state.json"
+# Sentinel: when present, the refresh token is dead and only `krisp-auth`
+# can recover. Subsequent runs short-circuit before hitting the API so we
+# don't fire the red banner once an hour while waiting for the user.
+# Cleared automatically on the next successful token refresh.
+NEEDS_REAUTH_FILE = STATE_DIR / "needs_reauth"
 # Staging dir lives outside ~/Documents/ so launchd-spawned runs don't
 # need macOS Full Disk Access. After rendering, contents are rsynced
 # into the vault in one step; rsync --update avoids clobbering and
@@ -163,6 +168,16 @@ _TRANSIENT_BACKOFF = (0, 5, 20, 60)
 # next hourly launchd tick gets a clean slate.
 _RATE_LIMIT_BACKOFF = (5, 60, 300)
 
+# 5xx (Cloudflare 502/503/504, origin overload) backoff. Same Retry-After
+# handling as 429 but a tighter total budget — these are typically minutes
+# long and the next hourly launchd tick will retry anyway. The history
+# behind this: a single 502 from Krisp's auth origin used to die() on the
+# spot, and because Krisp uses single-use refresh tokens, if the rotation
+# was server-committed before the 502 our local token became permanently
+# invalid. Retrying on 5xx gives a chance to actually receive the
+# rotated token before walking away.
+_SERVER_ERROR_BACKOFF = (5, 30, 120)
+
 
 def _parse_retry_after(value: str | None) -> int | None:
     """Parse a Retry-After header value (seconds or HTTP-date). Returns None
@@ -188,15 +203,20 @@ def _parse_retry_after(value: str | None) -> int | None:
 def http_post_with_retry(
     req: urllib.request.Request, op_name: str, timeout: int = 60,
 ) -> tuple[str | None, str]:
-    """POST with retries on transient errors and Retry-After-aware 429 backoff.
+    """POST with retries on transient errors, 5xx, and Retry-After-aware 429 backoff.
 
     Returns (body, content_type). body is None for HTTP 202 (notifications).
     On 429 exhaustion: fires rate-limit banner and exits 99.
+    On 5xx exhaustion: calls die() with the last payload.
+    On 400 invalid_grant during token refresh: writes the needs_reauth
+      sentinel, fires an actionable banner, and exits 2 (no retry — the
+      refresh token is dead and only `krisp-auth` can recover).
     On other HTTP errors: calls die() with payload (no retry).
     On exhausted transient retries: calls die() with the last exception.
     """
     transient_idx = 0
     rate_idx = 0
+    server_idx = 0
     while True:
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -222,7 +242,35 @@ def http_post_with_retry(
                 time.sleep(wait)
                 rate_idx += 1
                 continue
+            if 500 <= e.code < 600:
+                payload = e.read().decode("utf-8", errors="replace")
+                if server_idx >= len(_SERVER_ERROR_BACKOFF):
+                    die(f"{op_name} failed HTTP {e.code} after "
+                        f"{len(_SERVER_ERROR_BACKOFF) + 1} attempts: {payload}")
+                hinted = _parse_retry_after(e.headers.get("Retry-After"))
+                wait = hinted if hinted is not None else _SERVER_ERROR_BACKOFF[server_idx]
+                src = "Retry-After" if hinted is not None else "default"
+                log(f"{op_name}: HTTP {e.code}, retrying in {wait}s ({src}; "
+                    f"attempt {server_idx + 2}/{len(_SERVER_ERROR_BACKOFF) + 1})")
+                time.sleep(wait)
+                server_idx += 1
+                continue
             payload = e.read().decode("utf-8", errors="replace")
+            if e.code == 400 and "invalid_grant" in payload:
+                # Refresh token is dead (revoked, expired, or lost in a
+                # rotation/network race). Drop the sentinel so future
+                # hourly runs short-circuit instead of spamming the
+                # banner, then surface an actionable message.
+                try:
+                    STATE_DIR.mkdir(parents=True, exist_ok=True)
+                    NEEDS_REAUTH_FILE.write_text(
+                        f"{datetime.now().isoformat()} {op_name}: {payload}\n"
+                    )
+                except OSError as werr:
+                    log(f"warning: couldn't write {NEEDS_REAUTH_FILE.name}: {werr}")
+                log(f"FATAL: {op_name} returned invalid_grant — refresh token is dead")
+                fire_banner("krisp-sync needs re-auth — run `krisp-auth`")
+                sys.exit(2)
             die(f"{op_name} failed HTTP {e.code}: {payload}")
         except (TimeoutError, urllib.error.URLError) as e:
             transient_idx += 1
@@ -268,6 +316,14 @@ def refresh_access_token(creds: dict) -> tuple[str, dict]:
         TOKEN_FILE.write_text(json.dumps(creds, indent=2))
         os.chmod(TOKEN_FILE, 0o600)
         log("refresh token rotated")
+    # Refresh succeeded — clear any prior reauth sentinel from a past
+    # invalid_grant so future runs resume normally without manual cleanup.
+    if NEEDS_REAUTH_FILE.exists():
+        try:
+            NEEDS_REAUTH_FILE.unlink()
+            log(f"cleared {NEEDS_REAUTH_FILE.name} (auth recovered)")
+        except OSError as e:
+            log(f"warning: couldn't unlink {NEEDS_REAUTH_FILE.name}: {e}")
     return tokens["access_token"], creds
 
 
@@ -504,6 +560,13 @@ def main() -> int:
     log("starting" + (f" ({' '.join(flags)})" if flags else ""))
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Short-circuit: a prior invalid_grant left us locked out. Skip silently
+    # (no banner) until the user clears it by re-running `krisp-auth`. The
+    # sentinel is cleared automatically on the next successful token refresh.
+    if NEEDS_REAUTH_FILE.exists():
+        log(f"needs reauth ({NEEDS_REAUTH_FILE}) — run `krisp-auth` to recover. Skipping.")
+        return 0
 
     creds = load_creds()
     access_token, creds = refresh_access_token(creds)

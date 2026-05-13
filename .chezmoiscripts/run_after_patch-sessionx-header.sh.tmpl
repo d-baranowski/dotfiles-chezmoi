@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Patches the omerxx/tmux-sessionx plugin to use word labels in the popup
+# header instead of Nerd Font glyphs (which render as unknown-codepoint
+# boxes without the right font, and are meaningless even with). The
+# plugin doesn't expose a header config option, so we rewrite the line
+# in the installed plugin file directly.
+#
+# Idempotent: skips when already patched. Runs on every `chezmoi apply`
+# (run_after_) so a TPM plugin update that reverts the patch is healed
+# the next time the user applies dotfiles.
+set -euo pipefail
+
+PLUGIN="{{ .chezmoi.homeDir }}/.tmux/plugins/tmux-sessionx/sessionx.tmux"
+
+# Plugin not installed yet (fresh machine before tpm install) — nothing to do.
+[ -f "$PLUGIN" ] || exit 0
+
+# Marker test: bail if the patched HEADER is already present.
+grep -q 'bind_accept=open' "$PLUGIN" && exit 0
+
+# Replace the entire HEADER= line. Match by the unique prefix
+# (`HEADER="$bind_accept=...`) so the patch is robust to upstream
+# whitespace tweaks. BSD sed (-i.bak) for macOS portability.
+sed -i.bak -E 's|^([[:space:]]*)HEADER="\$bind_accept=.*"$|\1HEADER="$bind_accept=open  $bind_kill_session=kill  $bind_rename_session=rename  $bind_configuration_mode=dotfiles  $bind_window_mode=windows  $bind_new_window=browse-cwd  $bind_back=back  $bind_tree_mode=tree  $bind_scroll_up=scroll-up  $bind_scroll_down=scroll-down / $bind_zo=zoxide"|' "$PLUGIN"
+rm -f "$PLUGIN.bak"
+
+# Sanity check: verify the rewrite landed (sed exit code is unreliable for "no match").
+if ! grep -q 'bind_accept=open' "$PLUGIN"; then
+    echo "patch-sessionx-header: HEADER= line not found in $PLUGIN; upstream layout changed?" >&2
+    exit 1
+fi
+
+echo "patched $PLUGIN: sessionx popup header now uses word labels"

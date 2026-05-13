@@ -15,6 +15,7 @@ tmux	prefix K	resize pane up 5
 tmux	prefix L	resize pane right 5
 tmux	prefix |	split pane horizontal
 tmux	prefix -	split pane vertical
+tmux	prefix e	toggle window layout (side-by-side ↔ stacked)
 tmux	prefix w	new window
 tmux	prefix W	rename window
 tmux	prefix s	new session

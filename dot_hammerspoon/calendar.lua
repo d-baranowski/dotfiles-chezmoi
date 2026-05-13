@@ -547,6 +547,7 @@ function M.showUpcoming(horizonMin)
         else
           openInCalendarApp(body.startEpoch)
         end
+        if upcomingView then upcomingView:delete(); upcomingView = nil end
       elseif body.action == "close" then
         if upcomingView then upcomingView:delete(); upcomingView = nil end
       end
