@@ -76,22 +76,50 @@ function actions.run_queue(_)
   if runTask and runTask:isRunning() then
     jsCall("onError", { error = "run-queue already in flight" }); return
   end
+  print("slacksync: run_queue starting (" .. CTL .. ")")
   jsCall("onRunStart", {})
-  local buf = ""
-  runTask = hs.task.new("/bin/sh", function(rc, _, stderr)
+  local buf = ""              -- streaming line-split buffer
+  local fullOutput = ""       -- complete raw output (for diagnostics on crash)
+  local sawDone = false       -- whether the script emitted a {"event":"done"} line
+  local eventCount = 0
+  runTask = hs.task.new("/bin/sh", function(rc, _, _)
     runTask = nil
-    if rc ~= 0 then jsCall("onRunDone", { ok = false, error = stderr or ("rc=" .. rc) }) end
+    print(string.format(
+      "slacksync: run_queue exited rc=%s events=%d sawDone=%s output_bytes=%d",
+      tostring(rc), eventCount, tostring(sawDone), #fullOutput))
+    -- Always notify the UI on exit. Without this, a rc=0 exit with no
+    -- "done" event leaves the UI stuck showing "running queue...".
+    if not sawDone then
+      local tail = fullOutput
+      if #tail > 800 then tail = "…" .. tail:sub(-800) end
+      jsCall("onRunDone", {
+        ok = (rc == 0),
+        error = string.format("script exited rc=%s without emitting 'done' event\n%s",
+                              tostring(rc),
+                              (tail ~= "" and tail) or "(no output captured)"),
+      })
+    end
     actions.list_chats()
   end, function(_, stdout, _)
-    buf = buf .. (stdout or "")
+    if stdout and stdout ~= "" then
+      fullOutput = fullOutput .. stdout
+      buf = buf .. stdout
+    end
     while true do
       local nl = buf:find("\n", 1, true); if not nl then break end
       local line = buf:sub(1, nl - 1); buf = buf:sub(nl + 1)
       if line ~= "" then
         local ok, evt = pcall(hs.json.decode, line)
         if ok and type(evt) == "table" then
+          eventCount = eventCount + 1
           jsCall("onRunEvent", evt)
-          if evt.event == "done" then hs.timer.doAfter(0.2, actions.list_chats) end
+          if evt.event == "done" then
+            sawDone = true
+            hs.timer.doAfter(0.2, actions.list_chats)
+          end
+        else
+          -- Non-JSON line on stdout (e.g., python traceback). Surface as log.
+          jsCall("onRunEvent", { event = "log", line = line })
         end
       end
     end

@@ -1,5 +1,10 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3
 # slackdump-sync-ctl — manual, UI-driven Slack sync controller.
+#
+# Shebang note: hardcoded to Homebrew python3 (not /usr/bin/env python3)
+# because Hammerspoon launches this via `hs.task.new("/bin/sh", ...)` with
+# a minimal PATH where `python3` resolves to /usr/bin/python3 (3.9.6),
+# which lacks `tomllib` (stdlib only since 3.11).
 #
 # Distinct from `slackdump-sync` (the launchd hourly script). This tool
 # does not call Slack on its own clock; every API call is gated on an
@@ -28,6 +33,13 @@ import sys
 import time
 import tomllib
 from pathlib import Path
+
+# Hammerspoon's hs.task spawns processes with a minimal PATH that does not
+# include /opt/homebrew/bin, so `shutil.which("slackdump")` returns None when
+# this script is invoked from the UI even though slackdump is installed.
+# Prepend Homebrew's bin so all subprocess lookups (slackdump, python3, etc.)
+# resolve consistently regardless of caller.
+os.environ["PATH"] = "/opt/homebrew/bin:/opt/homebrew/sbin:" + os.environ.get("PATH", "/usr/bin:/bin")
 
 BASE_DIR = Path(os.environ["HOME"]) / "Library/Application Support/slackdump-sync"
 CONFIG_PATH = BASE_DIR / "workspaces.toml"

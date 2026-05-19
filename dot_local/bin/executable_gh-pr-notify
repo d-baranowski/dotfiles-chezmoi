@@ -1,0 +1,278 @@
+#!/usr/bin/env bash
+# gh-pr-notify — poll authored open PRs, emit new activity events as JSON.
+#
+# Called every 2 min from dot_hammerspoon/pr_notify.lua via hs.task.
+# Also runnable standalone: `gh-pr-notify | jq` for debugging.
+#
+# Output: JSON array on stdout, one object per new event:
+#   {type, repo, pr_number, pr_title, actor, snippet, url}
+#   types: approval, changes_requested, comment_review,
+#          issue_comment, inline_comment, ci_failure, rate_limited
+#
+# State: ~/Library/Caches/gh-pr-notify-state.json. On first run (or cache
+# wipe) the script seeds a high-water-mark timestamp and emits no events;
+# only events strictly newer than that timestamp will ever alert.
+
+set -uo pipefail
+
+# hs.task starts with a minimal PATH; gh / jq live in Homebrew.
+export PATH="/opt/homebrew/bin:/usr/bin:/bin"
+
+CACHE_DIR="$HOME/Library/Caches"
+STATE="$CACHE_DIR/gh-pr-notify-state.json"
+LOCK_DIR="$CACHE_DIR/gh-pr-notify.lock.d"
+mkdir -p "$CACHE_DIR"
+
+log() { printf 'gh-pr-notify: %s\n' "$*" >&2; }
+
+for bin in gh jq; do
+  command -v "$bin" >/dev/null 2>&1 || { log "missing dependency: $bin"; echo "[]"; exit 0; }
+done
+
+# Lock via mkdir (atomic on POSIX; macOS lacks flock by default). If the lock
+# dir already exists, either another run is in flight or a prior run was
+# killed; reclaim it if it's stale (>5 min, well past a normal run).
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  LOCK_AGE=$(( $(date +%s) - $(stat -f %m "$LOCK_DIR" 2>/dev/null || echo 0) ))
+  if [ "$LOCK_AGE" -gt 300 ]; then
+    rm -rf "$LOCK_DIR"
+    mkdir "$LOCK_DIR" 2>/dev/null || { echo "[]"; exit 0; }
+  else
+    echo "[]"
+    exit 0
+  fi
+fi
+trap 'rm -rf "$LOCK_DIR"' EXIT
+
+now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# First run / cache wipe: seed silently, no events.
+if [ ! -f "$STATE" ]; then
+  printf '{"schema":1,"created_at":"%s","prs":{}}\n' "$(now_iso)" > "$STATE"
+  echo "[]"
+  exit 0
+fi
+
+# Resolve the authenticated user (for skipping self-authored events).
+ME="$(gh api user --jq .login 2>/dev/null || true)"
+if [ -z "$ME" ]; then
+  log "gh api user failed (not authenticated?)"
+  echo "[]"
+  exit 0
+fi
+
+CREATED_AT="$(jq -r '.created_at // empty' "$STATE" 2>/dev/null || echo "")"
+if [ -z "$CREATED_AT" ]; then
+  CREATED_AT="$(now_iso)"
+fi
+
+# Fetch authored open PRs across all repos. `gh search prs` doesn't expose
+# the head SHA; we fetch it per-PR below as part of the parallel fan-out.
+PRS_JSON="$(gh search prs --author=@me --state=open --limit 50 \
+  --json url,number,title,repository,updatedAt 2>/dev/null || echo '[]')"
+
+# Side cache: the picker (pr_notify.showUpcoming) reads this directly so it
+# can render instantly without spawning gh. Refreshed on every tick.
+PRS_CACHE="$CACHE_DIR/gh-pr-notify-prs.json"
+PRS_TMP="$(mktemp "$PRS_CACHE.XXXXXX")"
+printf '%s\n' "$PRS_JSON" > "$PRS_TMP" && mv "$PRS_TMP" "$PRS_CACHE"
+
+# Rate-limit detection (best-effort: gh prints to stderr; checking remaining quota).
+RL_REMAINING="$(gh api rate_limit --jq '.resources.core.remaining' 2>/dev/null || echo 99999)"
+if [ "$RL_REMAINING" -lt 10 ] 2>/dev/null; then
+  RL_RESET="$(gh api rate_limit --jq '.resources.core.reset' 2>/dev/null || echo 0)"
+  jq -n --argjson r "$RL_RESET" \
+    '[{type:"rate_limited", repo:"", pr_number:0, pr_title:"GitHub API rate-limited",
+       actor:"", snippet:"resets at \($r|todate)", url:"https://github.com"}]'
+  exit 0
+fi
+
+PR_COUNT="$(echo "$PRS_JSON" | jq 'length' 2>/dev/null || echo 0)"
+if [ "$PR_COUNT" = "0" ]; then
+  echo "[]"
+  exit 0
+fi
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK" "$LOCK_DIR"' EXIT
+EVENTS_FILE="$WORK/events.jsonl"
+: > "$EVENTS_FILE"
+
+NEW_STATE="$(cat "$STATE")"
+
+# Helper: emit one event object as a JSONL row.
+emit_event() {
+  local type="$1" repo="$2" num="$3" title="$4" actor="$5" snippet="$6" url="$7"
+  jq -cn --arg t "$type" --arg r "$repo" --argjson n "$num" \
+         --arg ti "$title" --arg a "$actor" --arg s "$snippet" --arg u "$url" \
+    '{type:$t, repo:$r, pr_number:$n, pr_title:$ti, actor:$a, snippet:$s, url:$u}' \
+    >> "$EVENTS_FILE"
+}
+
+for i in $(seq 0 $((PR_COUNT - 1))); do
+  PR="$(echo "$PRS_JSON" | jq ".[$i]")"
+  REPO="$(echo "$PR" | jq -r '.repository.nameWithOwner')"
+  NUM="$(echo "$PR" | jq -r '.number')"
+  TITLE="$(echo "$PR" | jq -r '.title')"
+  URL="$(echo "$PR" | jq -r '.url')"
+  KEY="$REPO#$NUM"
+
+  PR_STATE="$(echo "$NEW_STATE" | jq --arg k "$KEY" '.prs[$k] // {}')"
+  LR="$(echo "$PR_STATE"  | jq -r '.last_review_id // 0')"
+  LIC="$(echo "$PR_STATE" | jq -r '.last_issue_comment_id // 0')"
+  LRC="$(echo "$PR_STATE" | jq -r '.last_review_comment_id // 0')"
+  PREV_HEAD="$(echo "$PR_STATE"  | jq -r '.head_sha // ""')"
+  PREV_CONCL="$(echo "$PR_STATE" | jq -c '.check_conclusions // {}')"
+
+  HEAD_FILE="$WORK/$i.head"
+  REV_FILE="$WORK/$i.reviews.json"
+  ISC_FILE="$WORK/$i.issue_comments.json"
+  RVC_FILE="$WORK/$i.review_comments.json"
+  CHK_FILE="$WORK/$i.checks.json"
+
+  # 4 parallel fetches; check-runs runs after we learn the head SHA below.
+  gh api "repos/$REPO/pulls/$NUM" --jq '.head.sha' > "$HEAD_FILE" 2>/dev/null &
+  gh api "repos/$REPO/pulls/$NUM/reviews"  --paginate > "$REV_FILE" 2>/dev/null &
+  gh api "repos/$REPO/issues/$NUM/comments" --paginate > "$ISC_FILE" 2>/dev/null &
+  gh api "repos/$REPO/pulls/$NUM/comments"  --paginate > "$RVC_FILE" 2>/dev/null &
+  wait
+
+  HEAD="$(tr -d '[:space:]' < "$HEAD_FILE" 2>/dev/null)"
+  if [ -n "$HEAD" ]; then
+    gh api "repos/$REPO/commits/$HEAD/check-runs" > "$CHK_FILE" 2>/dev/null
+  else
+    echo '{"check_runs":[]}' > "$CHK_FILE"
+  fi
+
+  # --paginate returns concatenated arrays — slurp+flatten to one array.
+  for f in "$REV_FILE" "$ISC_FILE" "$RVC_FILE"; do
+    if [ -s "$f" ]; then
+      jq -s 'if (.[0]|type) == "array" then add else . end' "$f" \
+        > "$f.norm" 2>/dev/null && mv "$f.norm" "$f"
+    fi
+  done
+
+  # --- Reviews: approvals, changes_requested, comment-state reviews ---
+  NEW_LR="$LR"
+  if [ -s "$REV_FILE" ]; then
+    while IFS= read -r REV; do
+      [ -z "$REV" ] && continue
+      RID="$(echo "$REV" | jq -r '.id // 0')"
+      RSTATE="$(echo "$REV" | jq -r '.state // ""')"
+      RUSER="$(echo "$REV"  | jq -r '.user.login // ""')"
+      RSUB="$(echo "$REV"   | jq -r '.submitted_at // ""')"
+      RBODY="$(echo "$REV"  | jq -r '.body // ""')"
+      [ "$RUSER" = "$ME" ] && continue
+      [ -z "$RSUB" ] && continue
+      if [ "$RID" -le "$NEW_LR" ] 2>/dev/null; then continue; fi
+      if [[ "$RSUB" < "$CREATED_AT" || "$RSUB" == "$CREATED_AT" ]]; then
+        [ "$RID" -gt "$NEW_LR" ] && NEW_LR="$RID"
+        continue
+      fi
+      case "$RSTATE" in
+        APPROVED)          TYPE="approval" ;;
+        CHANGES_REQUESTED) TYPE="changes_requested" ;;
+        COMMENTED)         TYPE="comment_review" ;;
+        *)                 NEW_LR="$RID"; continue ;;
+      esac
+      SNIP="$(printf '%s' "$RBODY" | tr '\n' ' ' | cut -c1-120)"
+      emit_event "$TYPE" "$REPO" "$NUM" "$TITLE" "$RUSER" "$SNIP" "$URL"
+      [ "$RID" -gt "$NEW_LR" ] && NEW_LR="$RID"
+    done < <(jq -c '.[]?' "$REV_FILE" 2>/dev/null)
+  fi
+  LR="$NEW_LR"
+
+  # --- Issue-level PR comments ---
+  NEW_LIC="$LIC"
+  if [ -s "$ISC_FILE" ]; then
+    while IFS= read -r C; do
+      [ -z "$C" ] && continue
+      CID="$(echo "$C"   | jq -r '.id // 0')"
+      CUSER="$(echo "$C" | jq -r '.user.login // ""')"
+      CCRT="$(echo "$C"  | jq -r '.created_at // ""')"
+      CBODY="$(echo "$C" | jq -r '.body // ""')"
+      [ "$CUSER" = "$ME" ] && continue
+      if [ "$CID" -le "$NEW_LIC" ] 2>/dev/null; then continue; fi
+      if [[ "$CCRT" < "$CREATED_AT" || "$CCRT" == "$CREATED_AT" ]]; then
+        [ "$CID" -gt "$NEW_LIC" ] && NEW_LIC="$CID"
+        continue
+      fi
+      SNIP="$(printf '%s' "$CBODY" | tr '\n' ' ' | cut -c1-120)"
+      emit_event "issue_comment" "$REPO" "$NUM" "$TITLE" "$CUSER" "$SNIP" "$URL"
+      [ "$CID" -gt "$NEW_LIC" ] && NEW_LIC="$CID"
+    done < <(jq -c '.[]?' "$ISC_FILE" 2>/dev/null)
+  fi
+  LIC="$NEW_LIC"
+
+  # --- Inline review comments ---
+  NEW_LRC="$LRC"
+  if [ -s "$RVC_FILE" ]; then
+    while IFS= read -r C; do
+      [ -z "$C" ] && continue
+      CID="$(echo "$C"    | jq -r '.id // 0')"
+      CUSER="$(echo "$C"  | jq -r '.user.login // ""')"
+      CCRT="$(echo "$C"   | jq -r '.created_at // ""')"
+      CBODY="$(echo "$C"  | jq -r '.body // ""')"
+      CPATH="$(echo "$C"  | jq -r '.path // ""')"
+      [ "$CUSER" = "$ME" ] && continue
+      if [ "$CID" -le "$NEW_LRC" ] 2>/dev/null; then continue; fi
+      if [[ "$CCRT" < "$CREATED_AT" || "$CCRT" == "$CREATED_AT" ]]; then
+        [ "$CID" -gt "$NEW_LRC" ] && NEW_LRC="$CID"
+        continue
+      fi
+      SNIP="$(printf '%s: %s' "$CPATH" "$CBODY" | tr '\n' ' ' | cut -c1-120)"
+      emit_event "inline_comment" "$REPO" "$NUM" "$TITLE" "$CUSER" "$SNIP" "$URL"
+      [ "$CID" -gt "$NEW_LRC" ] && NEW_LRC="$CID"
+    done < <(jq -c '.[]?' "$RVC_FILE" 2>/dev/null)
+  fi
+  LRC="$NEW_LRC"
+
+  # --- Check runs: emit ci_failure only on transition to failure ---
+  NEW_CONCL="{}"
+  if [ -s "$CHK_FILE" ]; then
+    NEW_CONCL="$(jq -c '
+      [.check_runs[]? | select(.name) | {(.name): (.conclusion // "")}]
+      | add // {}' "$CHK_FILE" 2>/dev/null || echo "{}")"
+    while IFS= read -r CK; do
+      [ -z "$CK" ] && continue
+      CNAME="$(echo "$CK"   | jq -r '.name // ""')"
+      CCONCL="$(echo "$CK"  | jq -r '.conclusion // ""')"
+      CURL="$(echo "$CK"    | jq -r '.html_url // ""')"
+      [ -z "$CNAME" ] && continue
+      if [ "$CCONCL" = "failure" ]; then
+        # New SHA → always emit (fresh build); otherwise only on transition.
+        if [ "$PREV_HEAD" = "$HEAD" ] && [ -n "$PREV_HEAD" ]; then
+          PREV_CK="$(echo "$PREV_CONCL" | jq -r --arg n "$CNAME" '.[$n] // ""')"
+          [ "$PREV_CK" = "failure" ] && continue
+        else
+          # Fresh SHA — still respect the high-water-mark to avoid seeding flood.
+          # Check-runs lack created_at on the run row; gate on PREV_HEAD presence.
+          [ -z "$PREV_HEAD" ] && continue
+        fi
+        emit_event "ci_failure" "$REPO" "$NUM" "$TITLE" "ci" "$CNAME" "${CURL:-$URL}"
+      fi
+    done < <(jq -c '.check_runs[]?' "$CHK_FILE" 2>/dev/null)
+  fi
+
+  NEW_STATE="$(echo "$NEW_STATE" | jq \
+    --arg k "$KEY" \
+    --argjson lr "$LR" --argjson lic "$LIC" --argjson lrc "$LRC" \
+    --arg head "$HEAD" --argjson concl "$NEW_CONCL" \
+    '.prs[$k] = {last_review_id: $lr, last_issue_comment_id: $lic, last_review_comment_id: $lrc, head_sha: $head, check_conclusions: $concl}')"
+done
+
+# Prune state entries for PRs that are no longer open/authored (avoid unbounded growth).
+OPEN_KEYS="$(echo "$PRS_JSON" | jq -r '.[] | "\(.repository.nameWithOwner)#\(.number)"')"
+KEEP_JSON="$(printf '%s\n' "$OPEN_KEYS" | jq -R -s -c 'split("\n") | map(select(length>0))')"
+NEW_STATE="$(echo "$NEW_STATE" | jq --argjson keep "$KEEP_JSON" \
+  '.prs = (.prs | with_entries(select(.key as $k | $keep | index($k))))')"
+
+# Atomic write.
+TMP="$(mktemp "$STATE.XXXXXX")"
+printf '%s\n' "$NEW_STATE" > "$TMP" && mv "$TMP" "$STATE"
+
+if [ -s "$EVENTS_FILE" ]; then
+  jq -cs '.' "$EVENTS_FILE"
+else
+  echo "[]"
+fi

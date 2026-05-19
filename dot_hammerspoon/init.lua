@@ -92,6 +92,17 @@ if not ok9 then
   print("Slacksync module error: " .. tostring(err9))
 end
 
+-- pr_notify: poll authored PRs every 2 min and overlay-alert on reviews,
+-- comments, approvals, and CI failures. Backed by ~/.local/bin/gh-pr-notify.
+local okPR, errPR = pcall(function()
+  pr_notify = require("pr_notify")
+  pr_notify.startWatcher()
+end)
+if not okPR then
+  hs.alert.show("PR notify module error: " .. tostring(errPR))
+  print("PR notify module error: " .. tostring(errPR))
+end
+
 -- shift+f6 → go to most recent Claude notification (same as bell click)
 hs.hotkey.bind({"shift"}, "f6", function()
   hs.task.new(os.getenv("HOME") .. "/.config/sketchybar/plugins/claude_notify_goto.sh", nil):start()

@@ -661,6 +661,32 @@
       ]
     },
     {
+      "iconPath": "arrow.triangle.pull",
+      "key": "G",
+      "label": "GitHub PRs",
+      "type": "group",
+      "actions": [
+        {
+          "key": "u",
+          "label": "show open PRs",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'pr_notify.showUpcoming()'"
+        },
+        {
+          "key": "w",
+          "label": "toggle PR notifier",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'pr_notify.toggleWatcher()'"
+        },
+        {
+          "key": "n",
+          "label": "check now",
+          "type": "command",
+          "value": "/opt/homebrew/bin/hs -c 'pr_notify.checkNow()'"
+        }
+      ]
+    },
+    {
       "actions": [
         {
           "key": "s",

@@ -42,6 +42,31 @@ button.danger:hover  { background: #eba0ac; }
 #status.error { color: #f38ba8; }
 #status.running { color: #f9e2af; }
 #status.ok { color: #a6e3a1; }
+#spinner {
+  display: none; width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid #45475a; border-top-color: #f9e2af;
+  animation: spin 0.7s linear infinite;
+}
+#status.running #spinner { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#progress {
+  height: 4px; background: #181825; position: relative; overflow: hidden;
+  border-bottom: 1px solid #313244;
+}
+#progress.hidden { display: none; }
+#progress > #progress-bar {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+  background: linear-gradient(90deg, #89b4fa, #b4befe);
+  transition: width 0.25s ease;
+}
+#progress.indeterminate > #progress-bar {
+  width: 30%;
+  animation: indet 1.2s ease-in-out infinite;
+}
+@keyframes indet {
+  0%   { left: -30%; }
+  100% { left: 100%; }
+}
 #wrap { width: 100%; }
 table { width: 100%; border-collapse: collapse; }
 thead th {
@@ -71,11 +96,12 @@ td { padding: 7px 12px; vertical-align: middle; }
   display: none;
   background: #11111b; color: #a6adc8;
   padding: 10px 20px; border-top: 1px solid #313244;
-  max-height: 200px; overflow: auto;
+  max-height: 240px; overflow: auto;
   font-size: 11px; line-height: 1.5; white-space: pre-wrap;
 }
 #log.show { display: block; }
 #log .err { color: #f38ba8; }
+#btn-log.active { background: #585b70; color: #cdd6f4; }
 #empty { padding: 60px 20px; text-align: center; color: #585b70; }
 </style></head><body>
 
@@ -83,11 +109,13 @@ td { padding: 7px 12px; vertical-align: middle; }
   <h1>Slack Sync</h1>
   <input type="text" id="search" placeholder="Filter by name, workspace, type..." autofocus>
   <button id="btn-refresh">Refresh</button>
+  <button id="btn-log" title="Toggle log panel">Log</button>
   <button id="btn-clear">Clear Queue</button>
   <button id="btn-run" class="primary">Run Queue</button>
 </div>
 
-<div id="status">Loading...</div>
+<div id="status"><span id="spinner"></span><span id="status-text">Loading...</span></div>
+<div id="progress" class="hidden"><div id="progress-bar"></div></div>
 
 <div id="wrap">
   <table id="tbl">
@@ -117,6 +145,8 @@ const $ = (id) => document.getElementById(id);
 let chats = [];
 let queueSize = 0;
 let running = false;
+let runTotal = 0;
+let runDone = 0;
 
 function fmtTs(ts) {
   if (!ts) return "";
@@ -134,9 +164,40 @@ function fmtTs(ts) {
 }
 
 function setStatus(msg, kind) {
-  const s = $("status");
-  s.textContent = msg;
-  s.className = kind || "";
+  $("status-text").textContent = msg;
+  $("status").className = kind || "";
+}
+
+function setProgress(done, total, indeterminate) {
+  const p = $("progress");
+  const b = $("progress-bar");
+  if (!running) { p.className = "hidden"; b.style.width = "0%"; return; }
+  if (indeterminate || !total) {
+    p.className = "indeterminate";
+    b.style.width = "";  // CSS animation drives it
+  } else {
+    p.className = "";
+    b.style.width = Math.round((done / total) * 100) + "%";
+  }
+}
+
+function appendLog(line, kind) {
+  const log = $("log");
+  const span = document.createElement("div");
+  if (kind) span.className = kind;
+  span.textContent = line;
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+  // Cap at 500 lines.
+  while (log.children.length > 500) log.removeChild(log.firstChild);
+}
+
+function toggleLog(force) {
+  const log = $("log");
+  const btn = $("btn-log");
+  const show = (force === undefined) ? !log.classList.contains("show") : force;
+  log.classList.toggle("show", show);
+  btn.classList.toggle("active", show);
 }
 
 function render() {
@@ -186,18 +247,6 @@ function escapeHTML(s) {
     .replace(/"/g, "&quot;");
 }
 
-function appendLog(line, kind) {
-  const log = $("log");
-  log.classList.add("show");
-  const span = document.createElement("div");
-  if (kind) span.className = kind;
-  span.textContent = line;
-  log.appendChild(span);
-  log.scrollTop = log.scrollHeight;
-  // Cap at 500 lines.
-  while (log.children.length > 500) log.removeChild(log.firstChild);
-}
-
 window._sync = {
   onChats(data) {
     chats = data.chats || [];
@@ -210,31 +259,43 @@ window._sync = {
   },
   onRunStart() {
     running = true;
+    runTotal = 0;
+    runDone = 0;
     $("log").innerHTML = "";
-    setStatus("running queue...", "running");
+    setStatus("starting...", "running");
+    setProgress(0, 0, true);  // indeterminate until 'start' event arrives
     render();
   },
   onRunEvent(evt) {
     if (evt.event === "log") {
       appendLog(evt.line);
     } else if (evt.event === "start") {
+      runTotal = evt.total || 0;
+      runDone = 0;
       setStatus(`syncing ${evt.total} chat(s)...`, "running");
+      setProgress(0, runTotal, false);
       appendLog(`▶ start (${evt.total} items)`);
     } else if (evt.event === "item_start") {
-      setStatus(`[${evt.index + 1}] ${evt.workspace}:${evt.channel}`, "running");
+      setStatus(`[${evt.index + 1}/${runTotal || "?"}] ${evt.workspace}:${evt.channel}`, "running");
       appendLog(`▶ ${evt.workspace}:${evt.channel} (${evt.archive || "?"})`);
     } else if (evt.event === "item_done") {
+      runDone += 1;
+      setProgress(runDone, runTotal, false);
       appendLog(`✓ done`);
     } else if (evt.event === "item_error") {
+      runDone += 1;  // still count as advanced
+      setProgress(runDone, runTotal, false);
       appendLog(`✗ error: ${evt.error}`, "err");
     } else if (evt.event === "rate_limited") {
       appendLog(`⚠ rate limited — aborting`, "err");
       setStatus("rate-limited; queue paused", "error");
     } else if (evt.event === "render_start") {
       setStatus("rendering markdown...", "running");
+      setProgress(0, 0, true);  // indeterminate during render
       appendLog(`▶ render`);
     } else if (evt.event === "done") {
       running = false;
+      setProgress(0, 0, false);  // hides the bar
       const status = evt.ok ? "ok" : "error";
       const msg = evt.ok
         ? `done · ${evt.processed} processed · ${evt.remaining} remaining`
@@ -246,9 +307,13 @@ window._sync = {
   },
   onRunDone(data) {
     running = false;
+    setProgress(0, 0, false);
     if (data && data.error) {
       setStatus("run failed: " + data.error, "error");
       appendLog(data.error, "err");
+      // Auto-open the log on failure so the error is visible without
+      // the user needing to click "Log" first.
+      toggleLog(true);
     }
     render();
   },
@@ -257,10 +322,15 @@ window._sync = {
 $("btn-refresh").onclick = () => { setStatus("loading..."); post("list_chats"); };
 $("btn-clear").onclick   = () => post("clear_queue");
 $("btn-run").onclick     = () => post("run_queue");
+$("btn-log").onclick     = () => toggleLog();
 $("search").addEventListener("input", render);
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") post("close");
+  if (e.key === "l" && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    toggleLog();
+  }
   if (e.key === "r" && (e.metaKey || e.ctrlKey)) {
     e.preventDefault();
     post("list_chats");
