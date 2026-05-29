@@ -47,6 +47,7 @@ aerospace	alt-m	workspace M
 aerospace	alt-b	workspace B
 aerospace	alt-n	workspace N
 aerospace	alt-s	workspace S
+aerospace	alt-e	workspace C (editors; alt-c reserved for copy)
 aerospace	alt-d	workspace D
 aerospace	alt-t	workspace T
 aerospace	alt-i	workspace I

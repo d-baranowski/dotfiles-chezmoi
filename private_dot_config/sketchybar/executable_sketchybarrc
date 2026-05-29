@@ -43,6 +43,7 @@ sketchybar --default "${default[@]}"
 sketchybar --add event aerospace_workspace_change
 sketchybar --add event aerospace_mode_changed
 sketchybar --add event claude_notification
+sketchybar --add event krisp_reauth_changed
 
 ##### Workspace Pills #####
 # One pill per workspace: bold letter on the left, app-icon glyphs on the right.
@@ -227,6 +228,23 @@ sketchybar --add item clock right \
   --add item battery right \
   --set battery update_freq=120 icon.drawing=on icon.font="Hack Nerd Font:Regular:14.0" script="$PLUGIN_DIR/battery.sh" \
   --subscribe battery system_woke power_source_change \
+  --add item krisp_reauth right \
+  --set krisp_reauth \
+  update_freq=60 \
+  drawing=off \
+  icon="" \
+  icon.font="Hack Nerd Font:Regular:14.0" \
+  icon.color=$ORANGE \
+  icon.padding_left=8 \
+  icon.padding_right=4 \
+  label="krisp" \
+  label.font="SF Pro:Bold:11.0" \
+  label.color=$ORANGE \
+  label.padding_right=8 \
+  background.drawing=off \
+  click_script="osascript -e 'display notification \"Run: krisp-auth\" with title \"krisp-sync needs re-auth\"'" \
+  script="$PLUGIN_DIR/krisp_reauth.sh" \
+  --subscribe krisp_reauth krisp_reauth_changed \
   --add item calendar_event right \
   --set calendar_event \
   update_freq=60 \

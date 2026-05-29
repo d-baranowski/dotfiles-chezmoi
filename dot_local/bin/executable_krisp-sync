@@ -149,6 +149,19 @@ def fire_rate_limit_banner(context: str) -> None:
     fire_banner(f"KRISP RATE LIMITED — {context}. sync stopped.")
 
 
+def poke_sketchybar() -> None:
+    """Notify sketchybar that the reauth sentinel state may have changed,
+    so the menu-bar warning updates immediately instead of on next poll."""
+    try:
+        subprocess.run(
+            ["sketchybar", "--trigger", "krisp_reauth_changed"],
+            timeout=2, check=False,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError):
+        pass
+
+
 def slugify(s: str, max_len: int = 60) -> str:
     s = re.sub(r"[^\w\s-]", "", s, flags=re.UNICODE).strip().lower()
     s = re.sub(r"[-\s]+", "-", s)
@@ -270,6 +283,7 @@ def http_post_with_retry(
                     log(f"warning: couldn't write {NEEDS_REAUTH_FILE.name}: {werr}")
                 log(f"FATAL: {op_name} returned invalid_grant — refresh token is dead")
                 fire_banner("krisp-sync needs re-auth — run `krisp-auth`")
+                poke_sketchybar()
                 sys.exit(2)
             die(f"{op_name} failed HTTP {e.code}: {payload}")
         except (TimeoutError, urllib.error.URLError) as e:
@@ -322,6 +336,7 @@ def refresh_access_token(creds: dict) -> tuple[str, dict]:
         try:
             NEEDS_REAUTH_FILE.unlink()
             log(f"cleared {NEEDS_REAUTH_FILE.name} (auth recovered)")
+            poke_sketchybar()
         except OSError as e:
             log(f"warning: couldn't unlink {NEEDS_REAUTH_FILE.name}: {e}")
     return tokens["access_token"], creds
