@@ -39,11 +39,17 @@ fi
 LIVE_SERVERS=$(printf '%s' "$CURRENT"  | jq '.mcpServers // []')
 TMPL_SERVERS=$(printf '%s' "$TEMPLATE" | jq '.mcpServers')
 
+# mcpproxy owns `telemetry` outright — it stamps last_startup_outcome and
+# notice_shown on every boot. Keep whatever is live rather than reverting it.
+LIVE_TELEMETRY=$(printf '%s' "$CURRENT" | jq '.telemetry // null')
+
 RESULT=$(printf '%s' "$TEMPLATE" | jq \
   --argjson live "$LIVE_SERVERS" \
   --argjson tmpl "$TMPL_SERVERS" \
+  --argjson livetel "$LIVE_TELEMETRY" \
   '
-  .mcpServers = (
+  (if $livetel then .telemetry = $livetel else . end)
+  | .mcpServers = (
     ($live | map(
       . as $l
       | ($tmpl | map(select(.name == $l.name)) | first) as $t
@@ -58,4 +64,4 @@ RESULT=$(printf '%s' "$TEMPLATE" | jq \
     + ($tmpl | map(select(.name as $n | ($live | any(.name == $n)) | not)))
   )
   ')
-printf '%s' "$RESULT"
+printf '%s\n' "$RESULT"

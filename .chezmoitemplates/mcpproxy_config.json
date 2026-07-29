@@ -1,9 +1,106 @@
 {
-  "listen": "127.0.0.1:18420",
-  "enable_socket": true,
+  "activity_cleanup_interval_min": 60,
+  "activity_max_records": 100000,
+  "activity_max_response_size": 65536,
+  "activity_max_size_mb": 256,
+  "activity_retention_days": 90,
+  "allow_server_add": true,
+  "allow_server_remove": true,
+  "api_key": "{{ .mcpproxy_api_key }}",
+  "call_tool_timeout": "2m0s",
+  "check_server_repo": true,
+  "code_execution_pool_size": 10,
+  "code_execution_timeout_ms": 120000,
   "data_dir": "{{ .chezmoi.homeDir }}/.mcpproxy",
-  "enable_tray": true,
   "debug_search": false,
+  "disable_management": false,
+  "docker_isolation": {
+    "enabled": false,
+    "enable_cache_volume": true,
+    "default_images": {
+      "bash": "alpine:3.18",
+      "binary": "alpine:3.18",
+      "cargo": "rust:1.75-slim",
+      "composer": "php:8.2-cli-alpine",
+      "gem": "ruby:3.2-alpine",
+      "go": "golang:1.21-alpine",
+      "node": "node:20",
+      "npm": "node:20",
+      "npx": "node:20",
+      "php": "php:8.2-cli-alpine",
+      "pip": "python:3.11",
+      "pipx": "python:3.11",
+      "python": "python:3.11",
+      "python3": "python:3.11",
+      "ruby": "ruby:3.2-alpine",
+      "rustc": "rust:1.75-slim",
+      "sh": "alpine:3.18",
+      "uvx": "python:3.11",
+      "yarn": "node:20"
+    },
+    "registry": "docker.io",
+    "network_mode": "bridge",
+    "memory_limit": "512m",
+    "cpu_limit": "1.0",
+    "timeout": "30s",
+    "log_max_size": "100m",
+    "log_max_files": "3"
+  },
+  "enable_code_execution": false,
+  "enable_prompts": true,
+  "enable_socket": true,
+  "environment": {
+    "inherit_system_safe": true,
+    "allowed_system_vars": [
+      "PATH",
+      "HOME",
+      "TMPDIR",
+      "TEMP",
+      "TMP",
+      "SHELL",
+      "TERM",
+      "LANG",
+      "USER",
+      "USERNAME",
+      "XDG_CONFIG_HOME",
+      "XDG_DATA_HOME",
+      "XDG_CACHE_HOME",
+      "XDG_RUNTIME_DIR",
+      "LC_ALL",
+      "LC_CTYPE",
+      "LC_NUMERIC",
+      "LC_TIME",
+      "LC_COLLATE",
+      "LC_MONETARY",
+      "LC_MESSAGES",
+      "LC_PAPER",
+      "LC_NAME",
+      "LC_ADDRESS",
+      "LC_TELEPHONE",
+      "LC_MEASUREMENT",
+      "LC_IDENTIFICATION"
+    ],
+    "custom_vars": {
+      "PATH": "{{ .chezmoi.homeDir }}/.asdf/shims:{{ .chezmoi.homeDir }}/go/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    },
+    "enhance_path": true
+  },
+  "intent_declaration": {
+    "strict_server_validation": true
+  },
+  "listen": "127.0.0.1:18420",
+  "logging": {
+    "level": "info",
+    "enable_file": true,
+    "enable_console": false,
+    "filename": "main.log",
+    "max_size": 10,
+    "max_backups": 5,
+    "max_age": 30,
+    "compress": true,
+    "json_format": false
+  },
+  "max_result_size_chars": 500000,
   "mcpServers": [
     {
       "name": "chrome-devtools",
@@ -14,7 +111,7 @@
         "chrome-devtools-mcp@0.21.0"
       ],
       "oauth": null,
-      "enabled": true,
+      "enabled": false,
       "quarantined": false,
       "created": "2026-04-10T12:47:07.774543+02:00",
       "updated": "0001-01-01T00:00:00Z"
@@ -30,7 +127,7 @@
         "--isolated=true"
       ],
       "oauth": null,
-      "enabled": true,
+      "enabled": false,
       "quarantined": false,
       "created": "2026-04-16T20:49:11.097561+02:00",
       "updated": "0001-01-01T00:00:00Z"
@@ -58,8 +155,8 @@
     },
     {
       "name": "jenkins",
-      "protocol": "streamable-http",
       "url": "http://may-chang.folk-saiph.ts.net:8080/mcp-server/mcp",
+      "protocol": "streamable-http",
       "headers": {
         "Authorization": "Basic ${keyring:jenkins_basic_auth}"
       },
@@ -76,6 +173,20 @@
       "args": [
         "-y",
         "next-devtools-mcp@0.3.10"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-04-10T12:47:07.774543+02:00",
+      "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "obsidian",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "@bitbonsai/mcpvault@0.11.0",
+        "{{ .chezmoi.homeDir }}/Documents/obsidian/work-notes/work-notes"
       ],
       "oauth": null,
       "enabled": true,
@@ -113,20 +224,6 @@
       "updated": "0001-01-01T00:00:00Z"
     },
     {
-      "name": "obsidian",
-      "protocol": "stdio",
-      "command": "npx",
-      "args": [
-        "@bitbonsai/mcpvault@0.11.0",
-        "{{ .chezmoi.homeDir }}/Documents/obsidian/work-notes/work-notes"
-      ],
-      "oauth": null,
-      "enabled": true,
-      "quarantined": false,
-      "created": "2026-04-10T12:47:07.774543+02:00",
-      "updated": "0001-01-01T00:00:00Z"
-    },
-    {
       "name": "trello",
       "protocol": "stdio",
       "command": "npx",
@@ -143,98 +240,52 @@
       "quarantined": false,
       "created": "2026-04-10T12:47:07.774543+02:00",
       "updated": "0001-01-01T00:00:00Z"
+    },
+    {
+      "name": "drawio",
+      "protocol": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@drawio/mcp@1.5.0"
+      ],
+      "oauth": null,
+      "enabled": true,
+      "quarantined": false,
+      "created": "2026-07-29T12:00:00+02:00",
+      "updated": "0001-01-01T00:00:00Z"
     }
   ],
-  "top_k": 5,
-  "tools_limit": 15,
-  "tool_response_limit": 20000,
-  "call_tool_timeout": "2m0s",
-  "environment": {
-    "inherit_system_safe": true,
-    "allowed_system_vars": [
-      "PATH",
-      "HOME",
-      "TMPDIR",
-      "TEMP",
-      "TMP",
-      "SHELL",
-      "TERM",
-      "LANG",
-      "USER",
-      "USERNAME",
-      "XDG_CONFIG_HOME",
-      "XDG_DATA_HOME",
-      "XDG_CACHE_HOME",
-      "XDG_RUNTIME_DIR",
-      "LC_ALL",
-      "LC_CTYPE",
-      "LC_NUMERIC",
-      "LC_TIME",
-      "LC_COLLATE",
-      "LC_MONETARY",
-      "LC_MESSAGES",
-      "LC_PAPER",
-      "LC_NAME",
-      "LC_ADDRESS",
-      "LC_TELEPHONE",
-      "LC_MEASUREMENT",
-      "LC_IDENTIFICATION"
+  "observability": {
+    "usage_cache_ttl": "5s",
+    "usage_persist_interval": "30s",
+    "metrics": {
+      "enabled": false
+    },
+    "tracing": {
+      "enabled": false,
+      "protocol": "http",
+      "endpoint": "localhost:4318",
+      "sample_rate": 0.1
+    }
+  },
+  "output_sanitisation": {
+    "response_action": "spotlight",
+    "strip_classes": [
+      "ansi",
+      "c0c1",
+      "bidi",
+      "zero_width"
     ],
-    "custom_vars": {
-      "PATH": "{{ .chezmoi.homeDir }}/.asdf/shims:{{ .chezmoi.homeDir }}/go/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-    },
-    "enhance_path": true
+    "max_redactions": 100
   },
-  "logging": {
-    "level": "info",
-    "enable_file": true,
-    "enable_console": true,
-    "filename": "main.log",
-    "max_size": 10,
-    "max_backups": 5,
-    "max_age": 30,
-    "compress": true,
-    "json_format": false
+  "output_validation": {
+    "mode": "warn",
+    "max_bytes": 5242880,
+    "max_depth": 64,
+    "missing_structured_content": "allow"
   },
-  "api_key": "{{ .mcpproxy_api_key }}",
-  "require_mcp_auth": false,
   "read_only_mode": false,
-  "disable_management": false,
-  "allow_server_add": true,
-  "allow_server_remove": true,
-  "enable_prompts": true,
-  "check_server_repo": true,
-  "docker_isolation": {
-    "enabled": false,
-    "default_images": {
-      "bash": "alpine:3.18",
-      "binary": "alpine:3.18",
-      "cargo": "rust:1.75-slim",
-      "composer": "php:8.2-cli-alpine",
-      "gem": "ruby:3.2-alpine",
-      "go": "golang:1.21-alpine",
-      "node": "node:20",
-      "npm": "node:20",
-      "npx": "node:20",
-      "php": "php:8.2-cli-alpine",
-      "pip": "python:3.11",
-      "pipx": "python:3.11",
-      "python": "python:3.11",
-      "python3": "python:3.11",
-      "ruby": "ruby:3.2-alpine",
-      "rustc": "rust:1.75-slim",
-      "sh": "alpine:3.18",
-      "uvx": "python:3.11",
-      "yarn": "node:20"
-    },
-    "registry": "docker.io",
-    "network_mode": "bridge",
-    "memory_limit": "512m",
-    "cpu_limit": "1.0",
-    "timeout": "30s",
-    "log_max_size": "100m",
-    "log_max_files": "3"
-  },
   "registries": [
     {
       "id": "pulse",
@@ -256,7 +307,8 @@
       "tags": [
         "verified"
       ],
-      "protocol": "custom/docker"
+      "protocol": "custom/docker",
+      "provenance": "official"
     },
     {
       "id": "fleur",
@@ -297,45 +349,8 @@
       "protocol": "custom/remote"
     }
   ],
-  "features": {
-    "enable_runtime": true,
-    "enable_event_bus": true,
-    "enable_sse": true,
-    "enable_observability": true,
-    "enable_health_checks": true,
-    "enable_metrics": true,
-    "enable_tracing": false,
-    "enable_oauth": true,
-    "enable_quarantine": true,
-    "enable_docker_isolation": false,
-    "enable_search": true,
-    "enable_caching": true,
-    "enable_async_storage": true,
-    "enable_web_ui": true,
-    "enable_tray": true,
-    "enable_debug_logging": false,
-    "enable_contract_tests": false
-  },
-  "tls": {
-    "enabled": false,
-    "require_client_cert": false,
-    "hsts": true
-  },
-  "tokenizer": {
-    "enabled": true,
-    "default_model": "gpt-4",
-    "encoding": "cl100k_base"
-  },
-  "enable_code_execution": false,
-  "code_execution_timeout_ms": 120000,
-  "code_execution_pool_size": 10,
-  "activity_retention_days": 90,
-  "activity_max_records": 100000,
-  "activity_max_response_size": 65536,
-  "activity_cleanup_interval_min": 60,
-  "intent_declaration": {
-    "strict_server_validation": true
-  },
+  "require_mcp_auth": false,
+  "routing_mode": "retrieve_tools",
   "sensitive_data_detection": {
     "enabled": true,
     "scan_requests": true,
@@ -356,5 +371,18 @@
   "telemetry": {
     "anonymous_id": "73f8e7c8-37c7-4b6f-811c-93796ffa8270"
   },
-  "routing_mode": "retrieve_tools"
+  "tls": {
+    "enabled": false,
+    "require_client_cert": false,
+    "hsts": true
+  },
+  "tokenizer": {
+    "enabled": true,
+    "default_model": "gpt-4",
+    "encoding": "cl100k_base"
+  },
+  "tool_response_limit": 20000,
+  "tools_limit": 15,
+  "toon_min_savings_pct": 15,
+  "toon_output": "off"
 }
