@@ -116,6 +116,7 @@ leader	leader r n	sync registers from neovim
 leader	leader l	last tmux session (toggle)
 leader	leader L	last aerospace workspace (toggle)
 leader	leader h	ask Haiku (floating one-shot prompt)
+leader	leader C	quick calendar popup (date + mini month + next 3 events)
 leader	leader n	clear all notifications
 leader	leader N	click (activate) top notification
 

@@ -249,7 +249,7 @@ sketchybar --add item clock right \
   --set calendar_event \
   update_freq=60 \
   script="$PLUGIN_DIR/calendar_event.sh" \
-  click_script="$PLUGIN_DIR/open_calendar.sh" \
+  click_script="/opt/homebrew/bin/hs -c 'calendar.showQuickCalendar()'" \
   icon.font="sketchybar-app-font:Regular:16.0" \
   icon.color=$WHITE \
   icon.y_offset=-1 \

@@ -636,6 +636,13 @@
     },
     {
       "iconPath": "calendar",
+      "key": "C",
+      "label": "Calendar (quick popup)",
+      "type": "command",
+      "value": "/opt/homebrew/bin/hs -c 'calendar.showQuickCalendar()'"
+    },
+    {
+      "iconPath": "calendar",
       "key": "e",
       "label": "Events / Calendar",
       "type": "group",

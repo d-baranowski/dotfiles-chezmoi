@@ -202,6 +202,8 @@ local watchTimer    = nil
 local notifiedKeys  = {}   -- [uid .. "_" .. lead] = true; dedupes alerts
 local upcomingView  = nil
 local upcomingUcc   = nil
+local quickView     = nil
+local quickUcc      = nil
 
 -- Reads the shared events cache written by sketchybar's calendar_event.sh.
 -- (Direct EventKit access from Hammerspoon is silently denied because the
@@ -575,6 +577,274 @@ function M.showUpcoming(horizonMin)
     hs.timer.doAfter(0.05, function()
       if upcomingView then
         local w = upcomingView:hswindow()
+        if w then w:raise():focus() end
+      end
+    end)
+  end)
+end
+
+--  ──────────── Quick calendar popup ────────────
+-- A compact date+mini-month+next-3-events panel, invoked from Leader Key C
+-- and from clicking the sketchybar calendar icon. Reuses getUpcoming so it
+-- inherits the important-calendar filter; renders a borderless floating
+-- window matching showUpcoming's style.
+
+local function buildQuickHTML(events, err)
+  local now = os.time()
+  local t = os.date("*t", now)
+  local Y, Mo, D = t.year, t.month, t.day
+  local dayName   = os.date("%A", now)   -- "Friday"
+  local monthName = os.date("%B", now)   -- "May"
+  -- Match the dd-mm-yy convention used by the Leader Key `leader c d` snippet.
+  local dateForCopy = os.date("%d-%m-%y", now)
+
+  -- ISO-week grid (Mon-first). Lua's wday is 1=Sun..7=Sat; convert so Mon=0.
+  local first = os.date("*t", os.time({year=Y, month=Mo, day=1, hour=12}))
+  local mondayOffset = (first.wday - 2) % 7  -- empty leading cells
+  -- Days in month via day 0 of next month (lua handles month=13 → next year).
+  local lastDay = os.date("*t", os.time({year=Y, month=Mo + 1, day=0, hour=12})).day
+
+  local cells = {}
+  for _ = 1, mondayOffset do
+    table.insert(cells, '<div class="cell empty"></div>')
+  end
+  for d = 1, lastDay do
+    local cls = (d == D) and "cell today" or "cell"
+    table.insert(cells, string.format('<div class="%s">%d</div>', cls, d))
+  end
+  while #cells % 7 ~= 0 do
+    table.insert(cells, '<div class="cell empty"></div>')
+  end
+
+  local rows = {}
+  for i, ev in ipairs(events) do
+    local title  = (ev.summary and ev.summary ~= "") and ev.summary or "(untitled)"
+    local cd     = fmtCountdown(ev.secondsUntilStart or 0)
+    local hasUrl = ev.url and ev.url ~= ""
+    local glyph  = hasUrl and "↗" or "◧"
+    local liCls  = {}
+    if i == 1 then table.insert(liCls, "first") end
+    if ev.isOngoing then
+      table.insert(liCls, "ongoing")
+    elseif (ev.secondsUntilStart or 0) < 0 then
+      table.insert(liCls, "past")
+    end
+    table.insert(rows, string.format([[
+<li class="%s" data-idx="%d">
+  <div class="erow">
+    <span class="etime">%s</span>
+    <span class="etitle">%s</span>
+    <button class="elink" data-idx="%d" title="Open">%s</button>
+  </div>
+  <div class="emeta">%s · %s%s</div>
+</li>]],
+      table.concat(liCls, " "),
+      i - 1,
+      htmlEscape(ev.startLocalStr or ""),
+      htmlEscape(title),
+      i - 1,
+      glyph,
+      cd,
+      htmlEscape(ev.calendar or ""),
+      ev.location and ev.location ~= "" and (" · " .. htmlEscape(ev.location)) or ""))
+  end
+
+  local evForJs = {}
+  for _, ev in ipairs(events) do
+    table.insert(evForJs, { url = ev.url or "", startEpoch = ev.startEpoch or 0 })
+  end
+
+  local errBlock, emptyBlock = "", ""
+  if err and err ~= "" then
+    errBlock = string.format('<div class="error">%s</div>', htmlEscape(err))
+  elseif #events == 0 then
+    emptyBlock = '<div class="empty">No upcoming events.</div>'
+  end
+
+  return table.concat({
+    [[<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+  :root { color-scheme: dark; }
+  html, body { margin:0; padding:0; overflow:hidden; }
+  body { font-family: -apple-system, system-ui; background:#1e1e2e; color:#cdd6f4;
+         padding: 16px 18px; border-radius:12px; user-select:none; -webkit-user-select:none;
+         position: relative; }
+  .head { margin-bottom:10px; }
+  .dow { font-size: 22px; font-weight: 700; color:#cdd6f4; line-height:1.1; }
+  .dt  { font-size: 12px; opacity: 0.6; margin-top:2px; }
+  .close { position: absolute; top: 10px; right: 12px;
+           background:transparent; border:0; color:#cdd6f4; opacity:0.5;
+           cursor:pointer; font-size:16px; padding: 4px 6px; line-height:1; }
+  .close:hover { opacity:1; color:#f38ba8; }
+  .month { font-size: 10px; opacity:0.6; letter-spacing:1px; text-transform:uppercase;
+           margin: 8px 0 6px; }
+  .grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:2px; margin-bottom: 10px; }
+  .wd { font-size: 10px; opacity:0.45; text-align:center; padding:4px 0; }
+  .cell { font-size: 12px; text-align:center; padding:5px 0; border-radius:5px;
+          color:#cdd6f4; font-variant-numeric: tabular-nums; }
+  .cell.empty { color:transparent; }
+  .cell.today { background:#89b4fa; color:#11111b; font-weight:700; }
+  ul { list-style:none; padding:0; margin:8px 0 0; border-top:1px solid #313244;
+       padding-top: 10px; }
+  li { padding:8px 10px; border-radius:6px; margin-bottom:4px; background:#181825; }
+  li.first { box-shadow: inset 2px 0 0 #89b4fa; }
+  li.past .etime { color:#6c7086; }
+  li.past .etitle { opacity:0.7; }
+  li.ongoing { box-shadow: inset 2px 0 0 #a6e3a1; }
+  li.ongoing .etime { color:#a6e3a1; }
+  li.first.ongoing { box-shadow: inset 2px 0 0 #a6e3a1, inset 4px 0 0 #89b4fa; }
+  .erow { display:flex; gap:10px; align-items:baseline; }
+  .etime { font-family:Menlo,ui-monospace,monospace; font-size:12px; color:#89b4fa;
+           min-width:44px; }
+  .etitle { font-size:13px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .elink { background:transparent; border:1px solid #45475a; color:#cdd6f4;
+           width:22px; height:22px; border-radius:5px; cursor:pointer; padding:0;
+           font-size:11px; display:inline-flex; align-items:center; justify-content:center;
+           flex-shrink:0; }
+  .elink:hover { background:#313244; border-color:#89b4fa; color:#89b4fa; }
+  .emeta { font-size:10px; opacity:0.5; margin-top:3px; padding-left:54px; }
+  .error, .empty { color:#a6adc8; background:rgba(166,173,200,0.06); padding:10px;
+                   border-radius:6px; font-size:11px; margin-top:8px; }
+  .error { color:#f38ba8; background:rgba(243,139,168,0.08); }
+  .footer { margin-top:10px; padding-top:8px; border-top:1px solid #313244;
+            display:flex; justify-content:space-between; font-size:10px; opacity:0.6; }
+  .toast { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+           background:#a6e3a1; color:#11111b; font-size:11px; font-weight:600;
+           padding: 4px 10px; border-radius: 12px; opacity: 0; pointer-events:none;
+           transition: opacity 160ms ease; }
+  .toast.show { opacity: 1; }
+  kbd { font-family:Menlo,ui-monospace,monospace; font-size:9px;
+        background:#313244; color:#cdd6f4; border:1px solid #45475a;
+        border-radius:3px; padding:1px 4px; line-height:1; }
+</style></head><body>
+<button class="close" id="close-btn" title="Close (Esc)">×</button>
+<div class="head">
+  <div class="dow">]], dayName, [[</div>
+  <div class="dt">]], string.format("%s %d, %d", monthName, D, Y), [[</div>
+</div>
+<div class="month">]], monthName, " ", tostring(Y), [[</div>
+<div class="grid">
+  <div class="wd">Mo</div><div class="wd">Tu</div><div class="wd">We</div><div class="wd">Th</div><div class="wd">Fr</div><div class="wd">Sa</div><div class="wd">Su</div>
+  ]], table.concat(cells), [[
+</div>
+]], errBlock, emptyBlock, [[
+<ul>]], table.concat(rows), [[</ul>
+<div class="footer">
+  <span><kbd>j</kbd> open · <kbd>y</kbd> copy date · <kbd>o</kbd> Calendar.app</span>
+  <span><kbd>Esc</kbd> close</span>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+  const EVENTS   = ]], hs.json.encode(evForJs), [[;
+  const DATE_STR = "]], dateForCopy, [[";
+  function send(action, extra) {
+    const m = Object.assign({action}, extra||{});
+    window.webkit.messageHandlers.calendarQuick.postMessage(m);
+  }
+  const toast = document.getElementById('toast');
+  let toastTimer = null;
+  function flashToast(text) {
+    toast.textContent = text;
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 900);
+  }
+  document.getElementById('close-btn').addEventListener('click', () => send('close'));
+  document.querySelectorAll('button.elink').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      const i = parseInt(btn.dataset.idx, 10);
+      const ev = EVENTS[i] || {};
+      send('open', { url: ev.url || '', startEpoch: ev.startEpoch || 0 });
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); send('close'); return; }
+    if (e.key === 'j') {
+      e.preventDefault();
+      const ev = EVENTS[0];
+      if (ev) send('open', { url: ev.url || '', startEpoch: ev.startEpoch || 0 });
+      return;
+    }
+    if (e.key === 'o') { e.preventDefault(); send('openCal'); return; }
+    if (e.key === 'y') {
+      e.preventDefault();
+      send('copyDate', { text: DATE_STR });
+      flashToast('copied ' + DATE_STR);
+      return;
+    }
+  });
+  requestAnimationFrame(() => {
+    const h = Math.ceil(document.documentElement.scrollHeight);
+    send('resize', { height: h });
+  });
+</script></body></html>]],
+  })
+end
+
+function M.showQuickCalendar()
+  -- Trigger-toggle: if it's already open, close it (so clicking the sketchybar
+  -- icon a second time dismisses without needing to focus the popup).
+  if quickView then quickView:delete(); quickView = nil; return end
+
+  M.getUpcoming(SHOW_HORIZON_MIN, function(events, err)
+    local top3 = {}
+    for i = 1, math.min(3, #events) do top3[i] = events[i] end
+
+    quickUcc = hs.webview.usercontent.new("calendarQuick")
+    quickUcc:setCallback(function(msg)
+      local body = msg.body
+      if type(body) ~= "table" then return end
+      if body.action == "resize" and type(body.height) == "number" then
+        if quickView then
+          local f = quickView:frame()
+          local newH = math.max(220, math.min(720, body.height))
+          if math.abs(f.h - newH) > 2 then
+            local screen = (quickView:hswindow() and quickView:hswindow():screen())
+                           or hs.mouse.getCurrentScreen()
+                           or hs.screen.mainScreen()
+            local sf = screen:frame()
+            quickView:frame({
+              x = sf.x + (sf.w - f.w) / 2,
+              y = sf.y + (sf.h - newH) / 2,
+              w = f.w, h = newH,
+            })
+          end
+        end
+      elseif body.action == "open" then
+        if body.url and body.url ~= "" then
+          hs.urlevent.openURL(body.url)
+        else
+          openInCalendarApp(body.startEpoch)
+        end
+        if quickView then quickView:delete(); quickView = nil end
+      elseif body.action == "openCal" then
+        hs.execute("open -a 'Calendar'")
+        if quickView then quickView:delete(); quickView = nil end
+      elseif body.action == "copyDate" then
+        hs.pasteboard.setContents(body.text or "")
+        -- Window stays open; the in-page toast confirms.
+      elseif body.action == "close" then
+        if quickView then quickView:delete(); quickView = nil end
+      end
+    end)
+
+    local W = 360
+    local initH = 380
+    local screen = (hs.mouse.getCurrentScreen() or hs.screen.mainScreen()):frame()
+    quickView = hs.webview.new(
+      { x = screen.x + (screen.w - W) / 2,
+        y = screen.y + (screen.h - initH) / 2,
+        w = W, h = initH },
+      {}, quickUcc)
+      :windowStyle({ "borderless" })
+      :level(hs.drawing.windowLevels.floating)
+      :allowTextEntry(true)
+      :html(buildQuickHTML(top3, err))
+      :show()
+
+    hs.timer.doAfter(0.05, function()
+      if quickView then
+        local w = quickView:hswindow()
         if w then w:raise():focus() end
       end
     end)
