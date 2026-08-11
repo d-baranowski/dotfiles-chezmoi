@@ -34,7 +34,9 @@ set -g @sessionx-zoxide-mode 'on'
 set -g @sessionx-custom-paths-subdirectories 'false'
 set -g @sessionx-filter-current 'false'
 set -g @continuum-restore 'on'
+set -g @continuum-save-interval '15'
 set -g @resurrect-strategy-nvim 'session'
+set -g @resurrect-capture-pane-contents 'on'
 
 # catppuccin v2 — window styling
 set -g @catppuccin_window_status_style "rounded"
@@ -160,4 +162,8 @@ run '~/.tmux/plugins/tpm/tpm'
 # session module bakes its color at load-time via `-gF`, so it can't change live).
 # IMPORTANT: These must come AFTER TPM so catppuccin doesn't overwrite them.
 set -g status-left "#[fg=#{?client_prefix,#{E:@thm_red},#{E:@thm_green}},bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust},bg=#{?client_prefix,#{E:@thm_red},#{E:@thm_green}}]#{E:@catppuccin_session_icon}#[fg=#{E:@thm_fg},bg=#{E:@thm_surface_0}] #S #[fg=#{E:@thm_surface_0},bg=default]#{E:@catppuccin_status_right_separator} "
-set -g status-right "#{?pane_in_mode,#[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust}#,bg=#{E:@thm_yellow}] COPY #[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_right_separator} ,}#(~/.tmux/git-status.sh '#{pane_current_path}')#{E:@catppuccin_status_directory}"
+set -g status-right "#{?pane_in_mode,#[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_left_separator}#[fg=#{E:@thm_crust}#,bg=#{E:@thm_yellow}] COPY #[fg=#{E:@thm_yellow}#,bg=default]#{E:@catppuccin_status_right_separator} ,}#(~/.tmux/git-status.sh '#{pane_current_path}')#{E:@catppuccin_status_directory}#(~/.tmux/plugins/tmux-continuum/scripts/continuum_save.sh)"
+# ^ The trailing #(...continuum_save.sh) is tmux-continuum's autosave hook. Continuum
+# normally injects it into status-right itself when TPM loads it, but we overwrite
+# status-right *after* TPM above, which silently wipes it and stops all autosaving.
+# It renders nothing — it's just a periodic timer driven by status-interval.
