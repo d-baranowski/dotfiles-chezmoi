@@ -89,6 +89,6 @@ if [ ! -f "$MUTE_FILE" ]; then
 fi
 
 # --- Trigger sketchybar ---
-sketchybar --trigger claude_notification 2>/dev/null
+/opt/homebrew/bin/timeout 5 sketchybar --trigger claude_notification 2>/dev/null
 
 exit 0

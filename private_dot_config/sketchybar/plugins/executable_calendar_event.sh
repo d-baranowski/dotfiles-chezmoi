@@ -18,7 +18,7 @@ CALENDAR_CACHE="$HOME/Library/Caches/hammerspoon-calendar-events.json"
 # DirectDisplayID=1 is the Apple Silicon built-in panel; any other ID is external.
 # We output a comma-separated list of arrangement-ids for external displays, or
 # empty if the laptop panel is the only connected display.
-EXTERNAL_DISPLAYS=$(sketchybar --query displays 2>/dev/null | \
+EXTERNAL_DISPLAYS=$(/opt/homebrew/bin/timeout 5 sketchybar --query displays 2>/dev/null | \
   /usr/bin/jq -r '[.[] | select(.DirectDisplayID != 1) | .["arrangement-id"]] | join(",")')
 
 if [ -z "$EXTERNAL_DISPLAYS" ]; then

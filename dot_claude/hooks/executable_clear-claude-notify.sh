@@ -14,6 +14,6 @@ fi
 jq --arg s "$TMUX_SESSION" '[.[] | select(.session != $s)]' "$STATE_FILE" > "${STATE_FILE}.tmp" 2>/dev/null && \
   mv "${STATE_FILE}.tmp" "$STATE_FILE"
 
-sketchybar --trigger claude_notification 2>/dev/null
+/opt/homebrew/bin/timeout 5 sketchybar --trigger claude_notification 2>/dev/null
 
 exit 0

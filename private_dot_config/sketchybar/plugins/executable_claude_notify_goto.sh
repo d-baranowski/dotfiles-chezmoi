@@ -29,4 +29,4 @@ fi
 TS=$(echo "$ENTRY" | jq -r '.ts')
 jq --arg ts "$TS" '[.[] | select(.ts != ($ts | tonumber))]' "$STATE_FILE" > "${STATE_FILE}.tmp" \
   && mv "${STATE_FILE}.tmp" "$STATE_FILE"
-sketchybar --trigger claude_notification 2>/dev/null
+/opt/homebrew/bin/timeout 5 sketchybar --trigger claude_notification 2>/dev/null

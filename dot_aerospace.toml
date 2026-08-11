@@ -19,7 +19,7 @@ after-startup-command = [
 
 # Notify sketchybar on workspace change
 exec-on-workspace-change = ['/bin/bash', '-c',
-    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE PREV_WORKSPACE=$AEROSPACE_PREV_WORKSPACE; /opt/homebrew/bin/hs -c "workspaces.setPrevWorkspace(\"$AEROSPACE_PREV_WORKSPACE\")"'
+    '/opt/homebrew/bin/timeout 5 sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE PREV_WORKSPACE=$AEROSPACE_PREV_WORKSPACE; /opt/homebrew/bin/timeout 5 /opt/homebrew/bin/hs -c "workspaces.setPrevWorkspace(\"$AEROSPACE_PREV_WORKSPACE\")"'
 ]
 
 # Start AeroSpace at login
@@ -63,7 +63,7 @@ persistent-workspaces = ["M", "B", "N", "S", "C", "D", "T", "Z", "I", "A"]
 # A callback that runs every time binding mode changes
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 # See: https://nikitabobko.github.io/AeroSpace/commands#mode
-on-mode-changed = ['exec-and-forget sketchybar --trigger aerospace_mode_changed']
+on-mode-changed = ['exec-and-forget /opt/homebrew/bin/timeout 5 sketchybar --trigger aerospace_mode_changed']
 
 # Possible values: (qwerty|dvorak|colemak)
 # See https://nikitabobko.github.io/AeroSpace/guide#key-mapping
