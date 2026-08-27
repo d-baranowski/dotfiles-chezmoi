@@ -70,6 +70,8 @@ brew "glow"
 brew "gnupg"
 # Open source programming language to build simple/reliable/efficient software
 brew "go"
+# Task is a task runner/build tool that aims to be simpler and easier to use
+brew "go-task"
 # Open source programming language to build simple/reliable/efficient software
 brew "go@1.24"
 # CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
@@ -110,8 +112,6 @@ brew "poppler"
 brew "prometheus"
 # File browser
 brew "ranger"
-# CLI proxy to minimize LLM token consumption
-brew "rtk"
 # Smart session manager for the terminal
 brew "sesh"
 # Static analysis and lint tool, for (ba)sh scripts
@@ -194,6 +194,7 @@ vscode "hediet.vscode-drawio"
 vscode "ms-vscode-remote.remote-ssh"
 vscode "ms-vscode-remote.remote-ssh-edit"
 vscode "ms-vscode.remote-explorer"
+vscode "parallelsdesktop.parallels-desktop"
 vscode "pjmiravalle.terraform-advanced-syntax-highlighting"
 vscode "redhat.vscode-xml"
 vscode "renesaarsoo.sql-formatter-vsc"
