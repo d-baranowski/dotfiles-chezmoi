@@ -1,0 +1,214 @@
+tap "anomalyco/tap"
+tap "bufbuild/buf"
+tap "chojs23/tap"
+tap "cloudflare/cloudflare"
+tap "felixkratz/formulae", "https://github.com/FelixKratz/homebrew-formulae", trusted: true
+tap "filosottile/musl-cross"
+tap "fluxcd/tap"
+tap "go-task/tap"
+tap "hashicorp/tap", trusted: true
+tap "mobile-dev-inc/tap"
+tap "nikitabobko/tap"
+tap "smart-mcp-proxy/mcpproxy", trusted: true
+tap "stacklok/tap"
+tap "stripe/stripe-cli"
+# Simple, modern, secure file encryption
+brew "age"
+# Display directories as trees (with optional color/HTML output)
+brew "tree"
+# Automate deployment, configuration, and upgrading
+brew "ansible"
+# Distributed revision control system
+brew "git"
+# Extendable version manager with support for Ruby, Node.js, Erlang & more
+brew "asdf"
+# Spell checker with better logic than ispell
+brew "aspell"
+# Official Amazon AWS command-line interface
+brew "awscli"
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
+# User-friendly launcher for Bazel
+brew "bazelisk"
+# Library for manipulating PNG images
+brew "libpng"
+# Vector graphics library with cross-device output support
+brew "cairo"
+# Library and utilities for processing GIFs
+brew "giflib"
+# Remove large files or passwords from Git history like git-filter-branch
+brew "bfg"
+# Manage your dotfiles across multiple diverse machines, securely
+brew "chezmoi"
+# Cut, copy, and paste anything, anywhere, all from the terminal
+brew "clipboard"
+# Cloudflare Tunnel client (formerly Argo Tunnel)
+brew "cloudflared"
+# GNU File, Shell, and Text utilities
+brew "coreutils"
+# Top-like interface for container metrics
+brew "ctop"
+# Get a file from an HTTP, HTTPS or FTP server
+brew "curl"
+# Modern, maintained replacement for ls
+brew "eza"
+# Simple, fast and user-friendly alternative to find
+brew "fd"
+# X11 implementation of the Remote Desktop Protocol (RDP)
+brew "freerdp"
+# Monitor a directory for changes and run a shell command
+brew "fswatch"
+# Command-line fuzzy finder written in Go
+brew "fzf"
+# GitHub command-line tool
+brew "gh"
+# Quickly rewrite git repository history
+brew "git-filter-repo"
+# Render markdown on the CLI
+brew "glow"
+# GNU Privacy Guard (OpenPGP)
+brew "gnupg"
+# Open source programming language to build simple/reliable/efficient software
+brew "go"
+# Open source programming language to build simple/reliable/efficient software
+brew "go@1.24"
+# CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin, and more
+brew "googleworkspace-cli"
+# Java-based scripting language
+brew "groovy"
+# Improved top (interactive process viewer)
+brew "htop"
+# Website copier/offline browser
+brew "httrack"
+# Get events and tasks from the macOS calendar database
+brew "ical-buddy"
+# Image manipulation library
+brew "jpeg"
+# Modern load testing tool, using Go and JavaScript
+brew "k6"
+# Postgres C API library
+brew "libpq"
+# Framework for layout and rendering of i18n text
+brew "pango"
+# Library to render SVG files using Cairo
+brew "librsvg"
+# Minimalist GNU for Windows and GCC cross-compilers
+brew "mingw-w64"
+# Simple tool to make locally trusted development certificates
+brew "mkcert"
+# Ambitious Vim-fork focused on extensibility and agility
+brew "neovim"
+# Password manager
+brew "pass"
+# Pinentry for GPG on Mac
+brew "pinentry-mac"
+# Package compiler and linker metadata toolkit
+brew "pkgconf"
+# PDF rendering library (based on the xpdf-3.0 code base)
+brew "poppler"
+# Service monitoring system and time series database
+brew "prometheus"
+# File browser
+brew "ranger"
+# CLI proxy to minimize LLM token consumption
+brew "rtk"
+# Smart session manager for the terminal
+brew "sesh"
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# Export Slack data without admin privileges
+brew "slackdump"
+# Editor of encrypted files
+brew "sops"
+# Opinionated Lua code formatter
+brew "stylua"
+# Change macOS audio source from the command-line
+brew "switchaudio-osx"
+# General purpose fuzzy finder TUI
+brew "television"
+# Terminal multiplexer
+brew "tmux"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
+# Vi 'workalike' with many additional features
+brew "vim"
+# Executes a program periodically, showing output fullscreen
+brew "watch"
+# Internet file retriever
+brew "wget"
+# CLI for Git worktree management, designed for parallel AI agent workflows
+brew "worktrunk"
+# Extensible command-line tool to format YAML files
+brew "yamlfmt"
+# Programming language designed for robustness, optimality, and clarity
+brew "zig"
+# Shell extension to navigate your filesystem faster
+brew "zoxide"
+# Fish-like fast/unobtrusive autosuggestions for zsh
+brew "zsh-autosuggestions"
+# A window border system for macOS
+brew "felixkratz/formulae/borders"
+# Custom macOS statusbar with shell plugin, interaction and graph support
+brew "felixkratz/formulae/sketchybar", trusted: true
+# Flux CLI
+brew "fluxcd/tap/flux", trusted: true
+# Packer
+brew "hashicorp/tap/packer", trusted: true
+# Terraform
+brew "hashicorp/tap/terraform"
+# Smart MCP Proxy - Intelligent tool discovery and proxying for MCP servers
+brew "smart-mcp-proxy/mcpproxy/mcpproxy"
+cask "aerospace"
+# Enable Windows-like alt-tab
+cask "alt-tab"
+# Terminal-based AI coding assistant
+cask "claude-code"
+# Online diagram software
+cask "drawio"
+cask "font-hack-nerd-font"
+cask "font-jetbrains-mono"
+cask "font-jetbrains-mono-nerd-font"
+cask "font-sketchybar-app-font"
+# Set of tools to manage resources and applications hosted on Google Cloud
+cask "gcloud-cli"
+# Desktop automation application
+cask "hammerspoon"
+# Vector graphics editor
+cask "inkscape"
+# Application launcher
+cask "leader-key"
+# Kubernetes IDE
+cask "lens"
+# Collaboration platform for API development
+cask "postman"
+# Plugin for AWS CLI to start and end sessions that connect to managed instances
+cask "session-manager-plugin"
+# Remote desktop software
+cask "x2goclient"
+# Open-source version of the X.Org X Window System
+cask "xquartz"
+vscode "4ops.terraform"
+vscode "anthropic.claude-code"
+vscode "golang.go"
+vscode "hediet.vscode-drawio"
+vscode "ms-vscode-remote.remote-ssh"
+vscode "ms-vscode-remote.remote-ssh-edit"
+vscode "ms-vscode.remote-explorer"
+vscode "pjmiravalle.terraform-advanced-syntax-highlighting"
+vscode "redhat.vscode-xml"
+vscode "renesaarsoo.sql-formatter-vsc"
+vscode "samuelcolvin.jinjahtml"
+vscode "vscodevim.vim"
+go "github.com/air-verse/air"
+go "github.com/go-delve/delve/cmd/dlv"
+go "github.com/guoling2008/go-mcp-postgres"
+go "github.com/fchimpan/gomod-age"
+go "github.com/pressly/goose/v3/cmd/goose"
+go "golang.org/x/tools/gopls"
+go "connectrpc.com/connect/cmd/protoc-gen-connect-go"
+go "google.golang.org/protobuf/cmd/protoc-gen-go"
+go "github.com/traefik/yaegi/cmd/yaegi"
+cargo "cargo-zigbuild"
+uv "cocoindex-code[full]"
+npm "@playwright/mcp"
+npm "corepack"

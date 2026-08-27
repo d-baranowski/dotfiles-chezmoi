@@ -229,5 +229,24 @@ jsonArraySplit () {
   done
 }
 
+# --- Homebrew package tracking -------------------------------------------
+# ~/.Brewfile is a chezmoi-tracked snapshot of taps/formulae/casks/VS Code
+# extensions. It is documentation + restore material only: NOTHING installs
+# from it automatically on `chezmoi apply`.
+#
+#   brewdump                              # snapshot current state into the repo
+#   brew bundle --file=~/.Brewfile --no-upgrade   # restore on a new machine
+#
+# --no-upgrade matters: without it `brew bundle` upgrades every outdated
+# formula as a side effect of installing the missing ones.
+brewdump () {
+  brew bundle dump --file="$HOME/.Brewfile" --force || return 1
+  chezmoi add "$HOME/.Brewfile" || return 1
+  echo "brewdump: snapshot written to ~/.Brewfile and copied into the chezmoi source"
+  # status, not diff: diff is blind to an untracked dot_Brewfile (its state
+  # on a fresh clone), so it would print nothing and look like a no-op.
+  chezmoi git -- --no-pager status --short -- dot_Brewfile
+}
+
 # Job-specific helpers (Parallax / Cognite). Easy to nuke when contracts change.
 [[ -f "$HOME/.aliases-parallax" ]] && source "$HOME/.aliases-parallax"

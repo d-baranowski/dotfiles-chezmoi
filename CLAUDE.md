@@ -39,6 +39,7 @@ dot_aerospace.toml         # ~/.aerospace.toml
 dot_asdfrc                 # ~/.asdfrc
 dot_tool-versions          # ~/.tool-versions
 dot_yarnrc                 # ~/.yarnrc
+dot_Brewfile               # ~/.Brewfile (Homebrew snapshot - see below)
 dot_docker/                # ~/.docker/ (config.json, daemon.json)
 
 private_dot_boto           # ~/.boto
@@ -99,6 +100,27 @@ Files ending in `.tmpl` are Go templates rendered by chezmoi. They use these var
 - `{{ .chezmoi.homeDir }}` — user's home directory (replaces hardcoded paths)
 - `{{ .mcpproxy_api_key }}` — MCPProxy API key (from `.chezmoidata.yaml`)
 - `{{ .postgres_password }}` — PostgreSQL password (from `.chezmoidata.yaml`)
+
+## Homebrew packages
+
+`dot_Brewfile` -> `~/.Brewfile` is a snapshot of installed taps, formulae, casks and
+VS Code extensions, produced by `brew bundle dump`.
+
+**It is tracked, not enforced.** There is deliberately no `run_onchange_` script and
+nothing installs from it during `chezmoi apply`. It exists as documentation and as
+restore material for a new machine.
+
+- Refresh the snapshot: `brewdump` (shell function in `dot_aliases`) - runs
+  `brew bundle dump` then `chezmoi add ~/.Brewfile`. Commit the result.
+- Restore on a new machine: `brew bundle --file=~/.Brewfile --no-upgrade`
+
+`--no-upgrade` is important. Without it `brew bundle` runs `brew upgrade` on every
+outdated formula as a side effect of installing the missing ones.
+
+`brew bundle dump` records only packages installed on request (73 of 192 installed
+formulae here) - dependencies are resolved by brew at install time. It also records
+`trusted: true` for third-party taps, so tap trust is restored declaratively rather
+than needing a manual `brew trust`.
 
 ## What is NOT in this repo
 
