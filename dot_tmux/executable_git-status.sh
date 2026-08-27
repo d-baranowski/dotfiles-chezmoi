@@ -10,6 +10,18 @@
 #   ⇡ahead⇣behind    commits ahead/behind upstream
 #   ⊘                no upstream configured
 
+# Never take .git/index.lock. `git status` and `git diff` opportunistically
+# refresh the index as a side effect, which means writing .git/index under
+# .git/index.lock. This script runs every `status-interval` (1s) for the active
+# pane, so those writes collide with real git work in the same worktree and
+# produce "Unable to create '.../index.lock': File exists".
+#
+# GIT_OPTIONAL_LOCKS=0 makes git skip exactly those optional refreshes; it is
+# the documented mechanism for status-bar/prompt tools. Output is unchanged --
+# only the stat-cache write is skipped. Exported once so it covers every git
+# invocation below.
+export GIT_OPTIONAL_LOCKS=0
+
 path="${1:-$PWD}"
 cd "$path" 2>/dev/null || exit 0
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
