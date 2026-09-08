@@ -188,3 +188,9 @@ _tv_channel_names() {
   compadd $(tv list-channels 2>/dev/null)
 }
 eval "$(tv completions zsh | sed 's/channel shall we watch?:_default/channel shall we watch?:_tv_channel_names/')"
+
+# >>> grok installer >>>
+export PATH="$HOME/.grok/bin:$PATH"
+fpath=(~/.grok/completions/zsh $fpath)
+autoload -Uz compinit && compinit -C
+# <<< grok installer <<<
