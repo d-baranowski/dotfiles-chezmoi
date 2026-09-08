@@ -94,9 +94,18 @@ end
 
 -- pr_notify: poll authored PRs every 2 min and overlay-alert on reviews,
 -- comments, approvals, and CI failures. Backed by ~/.local/bin/gh-pr-notify.
+--
+-- Auto-polling disabled 2026-09-08: not actively working a repo, and the
+-- 2-min timer was respawning gh-pr-notify around the clock. The module is
+-- still REQUIRED, not commented out, because Leader Key binds
+-- pr_notify.showUpcoming() / toggleWatcher() / checkNow() — commenting the
+-- require would leave those three bindings calling into a nil global.
+-- So: load the module, just don't start the timer. `toggleWatcher()` from
+-- Leader Key still turns polling back on for a session; to restore it at
+-- startup, uncomment the startWatcher() line.
 local okPR, errPR = pcall(function()
   pr_notify = require("pr_notify")
-  pr_notify.startWatcher()
+  -- pr_notify.startWatcher()
 end)
 if not okPR then
   hs.alert.show("PR notify module error: " .. tostring(errPR))
