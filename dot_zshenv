@@ -1,14 +1,17 @@
 . "$HOME/.cargo/env"
-export CLAUDE_CODE_ENABLE_TELEMETRY=1
-export OTEL_METRICS_EXPORTER=otlp
-export OTEL_LOGS_EXPORTER=otlp
-export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
-# Optional: how often Claude Code flushes metrics (default 60000ms)
-export OTEL_METRIC_EXPORT_INTERVAL=10000
-export OTEL_LOGS_EXPORT_INTERVAL=5000
 
-export COPILOT_OTEL_ENABLED=true
+# OTEL telemetry — disabled 2026-09-08. Nothing has been listening on
+# localhost:4317 for ages, so every session was retrying gRPC exports against a
+# dead endpoint. Re-enable by uncommenting after bringing an otel-lgtm up.
+# export CLAUDE_CODE_ENABLE_TELEMETRY=1
+# export OTEL_METRICS_EXPORTER=otlp
+# export OTEL_LOGS_EXPORTER=otlp
+# export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+# export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+# # Optional: how often Claude Code flushes metrics (default 60000ms)
+# export OTEL_METRIC_EXPORT_INTERVAL=10000
+# export OTEL_LOGS_EXPORT_INTERVAL=5000
+# export COPILOT_OTEL_ENABLED=true
 
 # cb (Slackadays/Clipboard) configuration — in zshenv so Hammerspoon (non-interactive) sees it
 export CLIPBOARD_EDITOR='nvim'

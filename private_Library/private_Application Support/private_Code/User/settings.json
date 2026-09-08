@@ -1,7 +1,8 @@
 {
-    "github.copilot.chat.otel.enabled": true,
-    "github.copilot.chat.otel.exporterType": "otlp-grpc",
-    "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4317",
+    // OTEL telemetry — disabled 2026-09-08, no collector on localhost:4317.
+    // "github.copilot.chat.otel.enabled": true,
+    // "github.copilot.chat.otel.exporterType": "otlp-grpc",
+    // "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4317",
     "github.copilot.nextEditSuggestions.enabled": true,
     "files.autoSave": "afterDelay",
     "files.autoSaveDelay": 500,
