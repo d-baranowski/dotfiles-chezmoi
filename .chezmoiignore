@@ -18,3 +18,9 @@ README.md
 # Machine-local Claude Code skills — not synced across machines.
 # Add any skill here that should live only on this host.
 .claude/skills/keybind
+
+# Slackdump export accidentally committed 2026-05-19 (103 MB: sqlite + image
+# uploads). Ignored so `chezmoi apply` doesn't splat it into $HOME. The sync
+# LaunchAgent has been Disabled since 2026-04-19. Remove from the repo with
+# `git rm -r --cached slackdump_20260519_140437` when convenient.
+slackdump_20260519_140437/
