@@ -108,7 +108,8 @@
       "command": "npx",
       "args": [
         "-y",
-        "chrome-devtools-mcp@0.21.0"
+        "chrome-devtools-mcp@0.21.0",
+        "--executablePath={{ .chezmoi.homeDir }}/.local/share/chrome-for-testing/current/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
       ],
       "oauth": null,
       "enabled": false,
@@ -124,10 +125,11 @@
         "-y",
         "chrome-devtools-mcp@0.21.0",
         "--headless=true",
-        "--isolated=true"
+        "--isolated=true",
+        "--executablePath={{ .chezmoi.homeDir }}/.local/share/chrome-for-testing/current/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
       ],
       "oauth": null,
-      "enabled": false,
+      "enabled": true,
       "quarantined": false,
       "created": "2026-04-16T20:49:11.097561+02:00",
       "updated": "0001-01-01T00:00:00Z"
