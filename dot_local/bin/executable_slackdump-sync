@@ -13,23 +13,20 @@
 #     targeted `resume` with a large lookback (-lookback p10y) against
 #     that single channel so we backfill its full history — even if the
 #     DM started long before we first saw it.
-#   - Cognite archive never uses `-refresh` (fixed single channel).
 #   - If Slack returns a rate-limit error, we abort immediately and fire
 #     a persistent red banner via Hammerspoon (ratelimit module). No
 #     further API calls happen on that run; the banner must be dismissed
 #     manually (Escape — only bound while banner is up). This preserves
 #     quota and keeps audit-log patterns from looking like a retrying bot.
 #
-# Maintains two SQLite archives (DMs + #cognite-internal) in
+# Maintains the DMs SQLite archive in
 # ~/Library/Application Support/slackdump-sync/, then renders them as
 # markdown. Driven by launchd (com.slackdump.sync.plist, hourly).
 set -euo pipefail
 
 WORKSPACE="helloparallax"
-COGNITE_CHANNEL="C09EAH2KZJ6"
 BASE_DIR="$HOME/Library/Application Support/slackdump-sync"
 DMS_DIR="$BASE_DIR/dms"
-COG_DIR="$BASE_DIR/cognite"
 LAST_REFRESH_FILE="$BASE_DIR/.last-refresh-dms"
 REFRESH_GATE_SECONDS=14400   # 4 hours
 NEW_CHAN_LOOKBACK="p10y"     # deep enough to capture full DM history
@@ -139,7 +136,7 @@ is_dm_or_mpim() {
 
 # ── Archives ──────────────────────────────────────────────────────────
 # Existence check — refuse to auto-archive.
-for pair in "DMs:$DMS_DIR" "cognite:$COG_DIR"; do
+for pair in "DMs:$DMS_DIR"; do
   label="${pair%%:*}" dir="${pair#*:}"
   if [[ ! -f "$dir/slackdump.sqlite" ]]; then
     echo "[$(date '+%F %T')] ERROR: $label archive missing at $dir" >&2
@@ -182,21 +179,12 @@ else
     || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
 fi
 
-# Pause between archives to stay under Slack rate limits.
-sleep "$INTER_CALL_DELAY"
-
-# Cognite: plain resume, never refreshed.
-run_slackdump "cognite-resume" resume -workspace "$WORKSPACE" "$COG_DIR" \
-  || { rc=$?; [[ $rc -eq 99 ]] && exit 99 || exit $rc; }
 
 # ── Render ────────────────────────────────────────────────────────────
 mkdir -p "$OUTPUT_DIR/_attachments"
 ln -sfn "$DMS_DIR/__uploads" "$OUTPUT_DIR/_attachments/dms"
-ln -sfn "$COG_DIR/__uploads" "$OUTPUT_DIR/_attachments/cognite"
 
 python3 "$CONVERTER" "$DMS_DIR/slackdump.sqlite" "$OUTPUT_DIR" "_attachments/dms" \
     --types=im,mpim
-python3 "$CONVERTER" "$COG_DIR/slackdump.sqlite" "$OUTPUT_DIR" "_attachments/cognite" \
-    --only="$COGNITE_CHANNEL"
 
 echo "[$(date '+%F %T')] done"

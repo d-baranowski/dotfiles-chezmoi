@@ -24,8 +24,3 @@ name = "helloparallax"
   name  = "dms"
   dir   = "~/Library/Application Support/slackdump-sync/dms"
   types = ["im", "mpim"]
-
-  [[workspace.archive]]
-  name = "cognite"
-  dir  = "~/Library/Application Support/slackdump-sync/cognite"
-  only = ["C09EAH2KZJ6"]

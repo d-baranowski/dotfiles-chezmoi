@@ -784,12 +784,6 @@
               "value": "echo -n 'dan.baranowski@parall.ax' | pbcopy"
             },
             {
-              "key": "c",
-              "label": "dan.baranowski@cognite.com",
-              "type": "command",
-              "value": "echo -n 'dan.baranowski@cognite.com' | pbcopy"
-            },
-            {
               "key": "n",
               "label": "NIP 6783214096",
               "type": "command",

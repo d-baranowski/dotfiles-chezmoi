@@ -248,5 +248,3 @@ brewdump () {
   chezmoi git -- --no-pager status --short -- dot_Brewfile
 }
 
-# Job-specific helpers (Parallax / Cognite). Easy to nuke when contracts change.
-[[ -f "$HOME/.aliases-parallax" ]] && source "$HOME/.aliases-parallax"
