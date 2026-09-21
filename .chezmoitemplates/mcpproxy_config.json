@@ -4,11 +4,13 @@
   "activity_max_response_size": 65536,
   "activity_max_size_mb": 256,
   "activity_retention_days": 90,
+  "aggregate_upstream_prompts": false,
   "allow_server_add": true,
   "allow_server_remove": true,
   "api_key": "{{ .mcpproxy_api_key }}",
   "call_tool_timeout": "2m0s",
   "check_server_repo": true,
+  "code_execution_max_parallel": 8,
   "code_execution_pool_size": 10,
   "code_execution_timeout_ms": 120000,
   "data_dir": "{{ .chezmoi.homeDir }}/.mcpproxy",
@@ -85,6 +87,25 @@
     },
     "enhance_path": true
   },
+  "features": {
+    "enable_runtime": true,
+    "enable_event_bus": true,
+    "enable_sse": true,
+    "enable_observability": true,
+    "enable_health_checks": true,
+    "enable_metrics": true,
+    "enable_tracing": false,
+    "enable_oauth": true,
+    "enable_quarantine": true,
+    "enable_docker_isolation": false,
+    "enable_search": true,
+    "enable_caching": true,
+    "enable_async_storage": true,
+    "enable_web_ui": true,
+    "enable_tray": true,
+    "enable_debug_logging": false,
+    "enable_contract_tests": false
+  },
   "intent_declaration": {
     "strict_server_validation": true
   },
@@ -112,7 +133,7 @@
         "--executablePath={{ .chezmoi.homeDir }}/.local/share/chrome-for-testing/current/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
       ],
       "oauth": null,
-      "enabled": false,
+      "enabled": true,
       "quarantined": false,
       "created": "2026-04-10T12:47:07.774543+02:00",
       "updated": "0001-01-01T00:00:00Z"
@@ -231,7 +252,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@delorenj/mcp-server-trello@1.7.1"
+        "@delorenj/mcp-server-trello@1.8.1"
       ],
       "env": {
         "TRELLO_API_KEY": "${keyring:trello_api_key}",
@@ -290,17 +311,6 @@
   "read_only_mode": false,
   "registries": [
     {
-      "id": "pulse",
-      "name": "Pulse MCP",
-      "description": "Browse and discover MCP use-cases, servers, clients, and news",
-      "url": "https://www.pulsemcp.com/",
-      "servers_url": "https://api.pulsemcp.com/v0beta/servers",
-      "tags": [
-        "verified"
-      ],
-      "protocol": "custom/pulse"
-    },
-    {
       "id": "docker-mcp-catalog",
       "name": "Docker MCP Catalog",
       "description": "A collection of secure, high-quality MCP servers as docker images",
@@ -311,44 +321,6 @@
       ],
       "protocol": "custom/docker",
       "provenance": "official"
-    },
-    {
-      "id": "fleur",
-      "name": "Fleur",
-      "description": "Fleur is the app store for Claude",
-      "url": "https://www.fleurmcp.com/",
-      "servers_url": "https://raw.githubusercontent.com/fleuristes/app-registry/refs/heads/main/apps.json",
-      "tags": [
-        "verified"
-      ],
-      "protocol": "custom/fleur"
-    },
-    {
-      "id": "azure-mcp-demo",
-      "name": "Azure MCP Registry Demo",
-      "description": "A reference implementation of MCP registry using Azure API Center",
-      "url": "https://demo.registry.azure-mcp.net/",
-      "servers_url": "https://demo.registry.azure-mcp.net/v0/servers",
-      "tags": [
-        "verified",
-        "demo",
-        "azure",
-        "reference"
-      ],
-      "protocol": "mcp/v0"
-    },
-    {
-      "id": "remote-mcp-servers",
-      "name": "Remote MCP Servers",
-      "description": "Community-maintained list of remote Model Context Protocol servers",
-      "url": "https://remote-mcp-servers.com/",
-      "servers_url": "https://remote-mcp-servers.com/api/servers",
-      "tags": [
-        "verified",
-        "community",
-        "remote"
-      ],
-      "protocol": "custom/remote"
     }
   ],
   "require_mcp_auth": false,
@@ -383,6 +355,8 @@
     "default_model": "gpt-4",
     "encoding": "cl100k_base"
   },
+  "tool_call_max_records_per_server": 1000,
+  "tool_call_max_response_size": 65536,
   "tool_response_limit": 20000,
   "tools_limit": 15,
   "toon_min_savings_pct": 15,

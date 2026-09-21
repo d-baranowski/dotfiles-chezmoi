@@ -1,0 +1,37 @@
+. "$HOME/.cargo/env"
+
+# OTEL telemetry — disabled 2026-09-08. Nothing has been listening on
+# localhost:4317 for ages, so every session was retrying gRPC exports against a
+# dead endpoint. Re-enable by uncommenting after bringing an otel-lgtm up.
+# export CLAUDE_CODE_ENABLE_TELEMETRY=1
+# export OTEL_METRICS_EXPORTER=otlp
+# export OTEL_LOGS_EXPORTER=otlp
+# export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+# export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+# # Optional: how often Claude Code flushes metrics (default 60000ms)
+# export OTEL_METRIC_EXPORT_INTERVAL=10000
+# export OTEL_LOGS_EXPORT_INTERVAL=5000
+# export COPILOT_OTEL_ENABLED=true
+
+# cb (Slackadays/Clipboard) configuration — in zshenv so Hammerspoon (non-interactive) sees it
+export CLIPBOARD_EDITOR='nvim'
+export CLIPBOARD_CUSTOMPERSIST='cb_[a-z]|cb_sig|cb_email|cb_addr'
+
+# Go tools installed without an exported GOPATH land in Go's default ~/go/bin, not in asdf's
+# GOPATH ($HOME/.asdf/installs/golang/*/packages/bin). .zshrc adds only the latter, and only for
+# interactive shells -- nx runs its tasks non-interactively, so `buf generate` reported
+# "protoc-gen-go: executable file not found in $PATH" while the binary sat in ~/go/bin the whole
+# time. Here rather than in .zshrc because .zshenv is the file every zsh reads.
+export PATH="$HOME/go/bin:$PATH"
+
+# Cloudflare API token, read from the macOS Keychain at apply time.
+#
+# Not a literal here: this file is committed, and the token used to live in the applied ~/.zshenv
+# only -- which meant it was invisible to chezmoi, and `chezmoi apply --force` silently removed it
+# while reconciling an unrelated change. Keeping it in the Keychain means the repo holds the
+# reference and never the value, and an apply can no longer lose it.
+#
+# To set or rotate:
+#   security add-generic-password -U -s chezmoi -a cloudflare-api-token -w '<token>'
+# On a new machine, add it to the Keychain first or `chezmoi apply` will fail on this line.
+export CLOUDFLARE_API_TOKEN="{{ keyring "chezmoi" "cloudflare-api-token" }}"
