@@ -20,12 +20,13 @@ When running inside tmux, keep your pane title saying what this session holds, s
 find the right pane among many. Run `~/.claude/bin/pane-title "<worked on> - <working on now>"`
 at the start of each task and whenever either half changes:
 
-- **Worked on**: the tasks already in your context, a few words each (tickets, features, repos),
-  e.g. `#751 docs, #815 remount`. It tells the user what you can be asked about.
-- **Working on now**: the current task in a few words, or `idle`.
+- **Worked on**: the tasks already in your context, a few plain English words each, e.g.
+  `bank transfer docs, therapy tab reset`. It tells the user what you can be asked about.
+- **Working on now**: the current task in a few plain English words, or `idle`.
 
-Example: `~/.claude/bin/pane-title "#751 docs, #775 specs - watching PR #284 CI"`. At the very
-start, before anything is done, use only the second half. It does nothing outside tmux.
+Plain words only: no ticket, PR or card numbers, which tell the user nothing at a glance.
+Example: `~/.claude/bin/pane-title "bank transfer docs, flaky e2e tests - watching CI"`. At the
+very start, before anything is done, use only the second half. It does nothing outside tmux.
 
 # Dotfiles
 
