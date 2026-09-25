@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Set this Claude session's tmux pane title: pane-title "UTR-000815: fix therapy tab remount"
+# A no-op outside tmux. Turns off allow-set-title for this pane only, or Claude Code's own
+# "✳ <session name>" title overwrites it.
+set -euo pipefail
+
+[ -n "${TMUX_PANE:-}" ] || exit 0
+if [ $# -eq 0 ]; then
+  echo "usage: pane-title <what this session is working on>" >&2
+  exit 2
+fi
+
+tmux set-option -p -t "$TMUX_PANE" allow-set-title off
+tmux select-pane -t "$TMUX_PANE" -T "$*"

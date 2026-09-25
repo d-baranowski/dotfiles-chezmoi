@@ -59,6 +59,7 @@ dot_claude/                                    # ~/.claude/
   settings.local.json                        #   Enforced defaults (vim=on, voice=on)
   modify_settings.json                       #   Injects statusLine into settings.json on apply
   hooks/                                     #   Claude Code hook scripts
+  bin/pane-title                             #   Sets the session's tmux pane title (rule in CLAUDE.md)
   keybindings.json                           #   Vim/keybinding config
   skills/                                    #   Custom skill definitions
   statusline/statusline.sh                   #   Custom statusLine renderer (see below)
