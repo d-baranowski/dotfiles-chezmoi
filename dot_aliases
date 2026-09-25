@@ -22,7 +22,9 @@ alias main="git checkout main && git pull && git stash"
 alias status="git status "
 alias pull="git pull "
 alias push="git push "
-alias diff="code -d "
+# Plain `diff` is deliberately NOT aliased: AI agents and scripts run it
+# non-interactively and expect text output, not a GUI window.
+alias vdiff="nvim -d"
 
 alias bstack='f() { git reflog | grep checkout | cut -d " " -f 8 | uniq | head ${1} | cat -n };f'
 gitignore() {

@@ -8,6 +8,12 @@
 [core]
         editor = nvim
 
+[diff]
+        tool = nvimdiff
+
+[merge]
+        tool = nvimdiff
+
 [alias]
         df = diff --name-only
         s = status -sb
