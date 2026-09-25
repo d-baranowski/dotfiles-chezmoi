@@ -16,10 +16,16 @@
 
 # tmux pane title
 
-When running inside tmux, keep your pane title saying what you are working on, so the user can
-find the right pane among many. At the start of each task, and whenever the task changes, run
-`~/.claude/bin/pane-title "<ticket or repo>: <task in 3-6 words>"`, for example
-`~/.claude/bin/pane-title "UTR-000815: fix therapy tab remount"`. It does nothing outside tmux.
+When running inside tmux, keep your pane title saying what this session holds, so the user can
+find the right pane among many. Run `~/.claude/bin/pane-title "<worked on> - <working on now>"`
+at the start of each task and whenever either half changes:
+
+- **Worked on**: the tasks already in your context, a few words each (tickets, features, repos),
+  e.g. `#751 docs, #815 remount`. It tells the user what you can be asked about.
+- **Working on now**: the current task in a few words, or `idle`.
+
+Example: `~/.claude/bin/pane-title "#751 docs, #775 specs - watching PR #284 CI"`. At the very
+start, before anything is done, use only the second half. It does nothing outside tmux.
 
 # Dotfiles
 
