@@ -167,3 +167,8 @@ set -g status-right "#{?pane_in_mode,#[fg=#{E:@thm_yellow}#,bg=default]#{E:@catp
 # normally injects it into status-right itself when TPM loads it, but we overwrite
 # status-right *after* TPM above, which silently wipes it and stops all autosaving.
 # It renders nothing — it's just a periodic timer driven by status-interval.
+
+# Pane titles in the top border, so a window of Claude sessions says what each is doing.
+# Inactive titles get their own pill: by default they take pane-border-style's brightblack.
+set -g pane-border-status top
+set -g pane-border-format "#{?pane_active,#[fg=#{E:@thm_crust}#,bg=#{E:@thm_mauve}#,bold],#[fg=#{E:@thm_fg}#,bg=#{E:@thm_surface_1}]} #{pane_index} #{pane_title} #[default]"
