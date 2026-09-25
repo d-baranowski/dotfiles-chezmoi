@@ -27,6 +27,8 @@ at the start of each task and whenever either half changes:
 Plain words only: no ticket, PR or card numbers, which tell the user nothing at a glance.
 Example: `~/.claude/bin/pane-title "bank transfer docs, flaky e2e tests - watching CI"`. At the
 very start, before anything is done, use only the second half. It does nothing outside tmux.
+Only the main session sets it: a subagent shares its parent's pane, so it must not call
+`pane-title`.
 
 # Dotfiles
 
